@@ -47,6 +47,7 @@ DataDistributionManagerOpenDDS::DataDistributionManagerOpenDDS()
 	m_argc = 0;
 	m_argv = NULL;
 	m_bStartDCPSInfoRepo = FALSE;
+	m_bDCPSInfoRepoLogOnApplication = FALSE;
 	m_DCPSInfoRepoCmdLine = "";
 }
 
@@ -65,10 +66,10 @@ void DataDistributionManagerOpenDDS::log(ACE_Log_Record &log_record)
 	case ACE_Log_Priority::LM_CRITICAL:
 		level = DDM_LOG_LEVEL::FATAL_LEVEL;
 		break;
-	case ACE_Log_Priority::LM_WARNING:level = DDM_LOG_LEVEL::WARNING_LEVEL; break;
-	case ACE_Log_Priority::LM_ERROR:level = DDM_LOG_LEVEL::ERROR_LEVEL; break;
-	case ACE_Log_Priority::LM_INFO:level = DDM_LOG_LEVEL::INFO_LEVEL; break;
-	default:level = DDM_LOG_LEVEL::DEBUG_LEVEL; break;
+	case ACE_Log_Priority::LM_WARNING: level = DDM_LOG_LEVEL::WARNING_LEVEL; break;
+	case ACE_Log_Priority::LM_ERROR: level = DDM_LOG_LEVEL::ERROR_LEVEL; break;
+	case ACE_Log_Priority::LM_INFO: level = DDM_LOG_LEVEL::INFO_LEVEL; break;
+	default: level = DDM_LOG_LEVEL::DEBUG_LEVEL; break;
 	}
 
 #define BUFFER_LEN 1024
@@ -91,19 +92,19 @@ DDM_UNDERLYING_ERROR_CONDITION DataDistributionManagerOpenDDS::OpenDDSErrorMappe
 	return DDM_UNDERLYING_ERROR_CONDITION::DDM_NO_ERROR_CONDITION;
 }
 
-HRESULT DataDistributionManagerOpenDDS::conf_init(pChannelConfigurationOpenDDS configuration, const char* arrayParams[], int len)
+HRESULT DataDistributionManagerOpenDDS::conf_init(ChannelConfigurationOpenDDS* configuration, const char* arrayParams[], int len)
 {
 	return read_config_file(configuration, arrayParams, len);
 }
 
-HRESULT DataDistributionManagerOpenDDS::read_config_file(pChannelConfigurationOpenDDS configuration, const char* arrayParams[], int len)
+HRESULT DataDistributionManagerOpenDDS::read_config_file(ChannelConfigurationOpenDDS* configuration, const char* arrayParams[], int len)
 {
 	// SHA512 of copyright calculated with https://www.fileformat.info/tool/hash.htm
 	static const byte sStringHash[] = "c444f7fa5bdbdd738661edc4c528c82bb9ed6f4efce9da0db9403b65035a5a970f87d62362c1f9a4f9d083e5c926460292aba19e5b179b3dd68ab584ce866a35";
 
 	for (size_t i = 0; i < len; i++)
 	{
-		std::string line = arrayParams[i];
+		std::string line(arrayParams[i]);
 
 		/* Trim string */
 		line.erase(0, line.find_first_not_of("\t "));
@@ -116,7 +117,7 @@ HRESULT DataDistributionManagerOpenDDS::read_config_file(pChannelConfigurationOp
 		size_t f = line.find("=");
 		if (f == std::string::npos)
 		{
-			Log(DDM_LOG_LEVEL::ERROR_LEVEL, "read_config_file", "Conf file: malformed line: %s", line.c_str());
+			Log(DDM_LOG_LEVEL::ERROR_LEVEL, "DataDistributionManagerOpenDDS", "read_config_file", "Conf file: malformed line: %s", line.c_str());
 			return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
 		}
 
@@ -140,6 +141,10 @@ DDS::Duration_t DataDistributionManagerOpenDDS::DurationFromMs(int milliseconds)
 
 void DataDistributionManagerOpenDDS::SetCmdLine(std::string cmdLine)
 {
+	TRACESTART("DataDistributionManagerOpenDDS", "SetCmdLine");
+
+	LOG_INFO("Cmd line: %s", cmdLine.c_str());
+
 	if (m_cmdLine.length() != 0) return;
 
 	m_cmdLine = cmdLine;
@@ -154,6 +159,12 @@ void DataDistributionManagerOpenDDS::SetCmdLine(std::string cmdLine)
 
 HRESULT DataDistributionManagerOpenDDS::InitializeInfoRepo()
 {
+	TRACESTART("DataDistributionManagerOpenDDS", "InitializeInfoRepo");
+
+	m_hChildStd_OUT_Rd = NULL;
+	m_hChildStd_OUT_Wr = NULL;
+	m_hreadDataFromInfoRepo = NULL;
+
 	if (m_bStartDCPSInfoRepo)
 	{
 		// get path of DataDistributionManagerOpenDDS.dll because DCPSInfoRepo is in the same folder
@@ -166,35 +177,91 @@ HRESULT DataDistributionManagerOpenDDS::InitializeInfoRepo()
 		std::string path = newFullPath.substr(0, newFullPath.size() - moduleName.size());
 
 		STARTUPINFO si;
-		PROCESS_INFORMATION pi;
-
 		ZeroMemory(&si, sizeof(si));
 		si.cb = sizeof(si);
+
+		PROCESS_INFORMATION pi;
 		ZeroMemory(&pi, sizeof(pi));
+
+		if (m_bDCPSInfoRepoLogOnApplication)
+		{
+			SECURITY_ATTRIBUTES saAttr;
+
+			ZeroMemory(&saAttr, sizeof(saAttr));
+			saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+			saAttr.bInheritHandle = TRUE;
+			saAttr.lpSecurityDescriptor = NULL;
+
+			// Create a pipe for the child process's STDOUT. 
+
+			if (!CreatePipe(&m_hChildStd_OUT_Rd, &m_hChildStd_OUT_Wr, &saAttr, 0))
+			{
+				LOG_ERROR("StdoutRd CreatePipe with error %x", HRESULT_FROM_WIN32(GetLastError()));
+				return HRESULT_FROM_WIN32(GetLastError());
+			}
+
+			// Ensure the read handle to the pipe for STDOUT is not inherited.
+
+			if (!SetHandleInformation(m_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
+			{
+				LOG_ERROR("Stdout SetHandleInformation with error %x", HRESULT_FROM_WIN32(GetLastError()));
+				return HRESULT_FROM_WIN32(GetLastError());
+			}
+
+			si.hStdError = m_hChildStd_OUT_Wr;
+			si.hStdOutput = m_hChildStd_OUT_Wr;
+			si.dwFlags |= STARTF_USESTDHANDLES;
+		}
 
 		std::string commandLine = path + "DCPSInfoRepo " + m_DCPSInfoRepoCmdLine;
 
 		// Start the child process. 
-		if (!CreateProcessA(NULL,			// No module name (use command line)
-			(TCHAR*)commandLine.c_str(),	// Command line
-			NULL,							// Process handle not inheritable
-			NULL,							// Thread handle not inheritable
-			FALSE,							// Set handle inheritance to FALSE
-			0,								// No creation flags
-			NULL,							// Use parent's environment block
-			NULL,							// Use parent's starting directory 
-			&si,							// Pointer to STARTUPINFO structure
-			&pi)							// Pointer to PROCESS_INFORMATION structure
+		if (!CreateProcessA(NULL,				// No module name (use command line)
+			(TCHAR*)commandLine.c_str(),		// Command line
+			NULL,								// Process handle not inheritable
+			NULL,								// Thread handle not inheritable
+			m_bDCPSInfoRepoLogOnApplication,	// Set handle inheritance to FALSE
+			0,									// No creation flags
+			NULL,								// Use parent's environment block
+			NULL,								// Use parent's starting directory 
+			&si,								// Pointer to STARTUPINFO structure
+			&pi)								// Pointer to PROCESS_INFORMATION structure
 			)
 		{
+			LOG_ERROR("CreateProcessA with error %x", HRESULT_FROM_WIN32(GetLastError()));
 			return HRESULT_FROM_WIN32(GetLastError());
+		}
+		else if (m_bDCPSInfoRepoLogOnApplication)
+		{
+			m_hreadDataFromInfoRepo = CreateThread(0, 0, readDataFromInfoRepo, this, 0, NULL);
 		}
 	}
 	return S_OK;
 }
 
+DWORD __stdcall DataDistributionManagerOpenDDS::readDataFromInfoRepo(void * argh)
+{
+	DWORD dwRead;
+	CHAR chBuf[BUFSIZE];
+	BOOL bSuccess = FALSE;
+	DataDistributionManagerOpenDDS* pDataDistributionManagerOpenDDS = static_cast<DataDistributionManagerOpenDDS*>(argh);
+
+	for (;;)
+	{
+		bSuccess = ReadFile(pDataDistributionManagerOpenDDS->m_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+		if (!bSuccess || dwRead == 0) continue;
+
+		pDataDistributionManagerOpenDDS->Log(DDM_LOG_LEVEL::INFO_LEVEL, "External source", "DCPSInfoRepo", chBuf);
+
+		if (!bSuccess) break;
+	}
+	return 0;
+}
+
 HRESULT DataDistributionManagerOpenDDS::Initialize()
 {
+	TRACESTART("DataDistributionManagerOpenDDS", "Initialize");
+
 	HRESULT hr = S_OK;
 	if (read_config_file(NULL, GetArrayParams(), GetArrayParamsLen()) != NO_ERROR)
 	{
@@ -209,7 +276,7 @@ HRESULT DataDistributionManagerOpenDDS::Initialize()
 
 	if (CORBA::is_nil(m_dpf.in()))
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, "General", "Initialize", "TheParticipantFactoryWithArgs failed.");
+		LOG_ERROR0("TheParticipantFactoryWithArgs failed.");
 		return E_FAIL;
 	}
 
@@ -221,7 +288,7 @@ HRESULT DataDistributionManagerOpenDDS::Initialize()
 
 	if (CORBA::is_nil(m_participant.in()))
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, "General", "Initialize", "create_participant failed.");
+		LOG_ERROR0("create_participant failed.");
 		return E_FAIL;
 	}
 
@@ -261,7 +328,7 @@ HRESULT DataDistributionManagerOpenDDS::Initialize()
 	openddsmsg_servant = new DataDistributionSchema::OpenDDSMsgTypeSupportImpl();
 	if (DDS::RETCODE_OK != openddsmsg_servant->register_type(m_participant.in(),
 		DATADISTRIBUTION_SCHEMA_OPENDDSMSG_TYPE)) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, "Initialize", "register_type for %s failed", DATADISTRIBUTION_SCHEMA_OPENDDSMSG_TYPE);
+		LOG_ERROR("register_type for %s failed", DATADISTRIBUTION_SCHEMA_OPENDDSMSG_TYPE);
 		return E_FAIL;
 	}
 
@@ -280,10 +347,12 @@ HRESULT DataDistributionManagerOpenDDS::Initialize()
 
 HRESULT DataDistributionManagerOpenDDS::Lock(HANDLE channelHandle, DWORD timeout)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "Lock");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "Lock", "SubSystem not started.");
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
@@ -292,10 +361,12 @@ HRESULT DataDistributionManagerOpenDDS::Lock(HANDLE channelHandle, DWORD timeout
 
 HRESULT DataDistributionManagerOpenDDS::Unlock(HANDLE channelHandle)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "Unlock");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "Unlock", "SubSystem not started.");
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
@@ -304,9 +375,11 @@ HRESULT DataDistributionManagerOpenDDS::Unlock(HANDLE channelHandle)
 
 HANDLE DataDistributionManagerOpenDDS::CreateChannel(const char* channelName, IDataDistributionChannelCallback* dataCb, DDM_CHANNEL_DIRECTION direction, const char* arrayParams[], int len)
 {
+	TRACESTART("DataDistributionManagerOpenDDS", "CreateChannel");
+
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, channelName, "CreateChannel", "SubSystem not started.");
+		LOG_ERROR("SubSystem not started. Channel: %s", channelName);
 		return NULL;
 	}
 
@@ -315,14 +388,14 @@ HANDLE DataDistributionManagerOpenDDS::CreateChannel(const char* channelName, ID
 	sChannelName = sChannelName.append(GetChannelTrailer());
 #endif
 
-	pChannelConfigurationOpenDDS pChannelConfiguration = new ChannelConfigurationOpenDDS(sChannelName.c_str(), direction, this, dataCb);
+	ChannelConfigurationOpenDDS* pChannelConfiguration = new ChannelConfigurationOpenDDS(sChannelName.c_str(), direction, this, dataCb);
 
 	std::string errstr;
 
 	int retVal = conf_init(pChannelConfiguration, (arrayParams == NULL) ? GetArrayParams() : arrayParams, (len == 0) ? GetArrayParamsLen() : len);
 	if (retVal != NO_ERROR)
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "CreateChannel", "set conf_init error: %d", retVal);
+		LOG_ERROR("Channel %s - set conf_init error: %d", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel", retVal);
 		return NULL;
 	}
 
@@ -344,7 +417,7 @@ HANDLE DataDistributionManagerOpenDDS::CreateChannel(const char* channelName, ID
 		::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
 
 	if (CORBA::is_nil(pChannelConfiguration->channel_channel.in())) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "CreateChannel", "create_channel for %s failed", pChannelConfiguration->GetChannelName());
+		LOG_ERROR("Channel %s - create_channel failed", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		return NULL;
 	}
 
@@ -367,13 +440,13 @@ HANDLE DataDistributionManagerOpenDDS::CreateChannel(const char* channelName, ID
 		DDS::DataWriterListener::_nil(),
 		::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
 	if (CORBA::is_nil(pChannelConfiguration->channel_base_dw.in())) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "CreateChannel", "create_datawriter for %s failed.", pChannelConfiguration->GetChannelName());
+		LOG_ERROR("Channel %s - create_datawriter failed.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		return NULL;
 	}
 
 	pChannelConfiguration->channel_dw = DataDistributionSchema::OpenDDSMsgDataWriter::_narrow(pChannelConfiguration->channel_base_dw.in());
 	if (CORBA::is_nil(pChannelConfiguration->channel_dw.in())) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "CreateChannel", "Primary DataWriter could not be narrowed");
+		LOG_ERROR("Channel %s - Primary DataWriter could not be narrowed", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		return NULL;
 	}
 
@@ -383,7 +456,7 @@ HANDLE DataDistributionManagerOpenDDS::CreateChannel(const char* channelName, ID
 		DDS::SubscriberListener::_nil(),
 		::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
 	if (CORBA::is_nil(pChannelConfiguration->subscriber.in())) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "CreateChannel", "create_subscriber failed.");
+		LOG_ERROR("Channel %s - create_subscriber failed.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		return NULL;
 	}
 
@@ -403,13 +476,13 @@ HANDLE DataDistributionManagerOpenDDS::CreateChannel(const char* channelName, ID
 		::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
 
 	if (CORBA::is_nil(pChannelConfiguration->channel_base_dr.in())) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "CreateChannel", "create_datreader for %s failed.", pChannelConfiguration->GetChannelName());
+		LOG_ERROR("Channel %s - create_datreader failed.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		return NULL;
 	}
 
 	pChannelConfiguration->channel_dr = DataDistributionSchema::OpenDDSMsgDataReader::_narrow(pChannelConfiguration->channel_base_dr.in());
 	if (CORBA::is_nil(pChannelConfiguration->channel_dr.in())) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "CreateChannel", "Primary DataReader could not be narrowed");;
+		LOG_ERROR("Channel %s - Primary DataReader could not be narrowed", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		return NULL;
 	}
 
@@ -420,11 +493,13 @@ HANDLE DataDistributionManagerOpenDDS::CreateChannel(const char* channelName, ID
 
 HRESULT DataDistributionManagerOpenDDS::StartChannel(HANDLE channelHandle, DWORD dwMilliseconds)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "StartChannel");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
 
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "Start", "SubSystem not started.");
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
@@ -434,10 +509,12 @@ HRESULT DataDistributionManagerOpenDDS::StartChannel(HANDLE channelHandle, DWORD
 
 HRESULT DataDistributionManagerOpenDDS::StopChannel(HANDLE channelHandle, DWORD dwMilliseconds)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "StopChannel");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "Start", "SubSystem not started.");
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
@@ -446,15 +523,18 @@ HRESULT DataDistributionManagerOpenDDS::StopChannel(HANDLE channelHandle, DWORD 
 
 void DataDistributionManagerOpenDDS::SetParameter(HANDLE channelHandle, const char* paramName, const char* paramValue)
 {
-	Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionManagerOpenDDS", "SetParameter", "Name: %s - Value: %s", (paramName != NULL) ? paramName : "", (paramValue != NULL) ? paramValue : "");
+	TRACESTART("DataDistributionManagerOpenDDS", "SetParameter");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
+
+	LOG_INFO("Channel %s - Name: %s - Value: %s", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel", (paramName != NULL) ? paramName : "", (paramValue != NULL) ? paramValue : "");
 
 	DataDistributionCommon::SetParameter(channelHandle, paramName, paramValue);
 
 	if (NULL != channelHandle)
 	{
 		// Non global params
-		pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
-
+		
 	}
 	else
 	{
@@ -476,6 +556,15 @@ void DataDistributionManagerOpenDDS::SetParameter(HANDLE channelHandle, const ch
 				m_bStartDCPSInfoRepo = true;
 			else
 				m_bStartDCPSInfoRepo = false;
+			return;
+		}
+		else if (!strcmp(paramName, "datadistributionmanager.opendds.dcpsinforepo.logonapplication"))
+		{
+			if (!strcmp(paramValue, "true") ||
+				!strcmp(paramValue, "1"))
+				m_bDCPSInfoRepoLogOnApplication = true;
+			else
+				m_bDCPSInfoRepoLogOnApplication = false;
 			return;
 		}
 		else if (!strcmp(paramName, "datadistributionmanager.opendds.dcpsinforepo.cmdlineargs"))
@@ -502,11 +591,13 @@ static const char* ConvertIToA(size_t value)
 
 const char* DataDistributionManagerOpenDDS::GetParameter(HANDLE channelHandle, const char* paramName)
 {
-	Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionManagerOpenDDS", "GetParameter", "Name: %s", (paramName != NULL) ? paramName : "");
+	TRACESTART("DataDistributionManagerOpenDDS", "GetParameter");
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
+	LOG_INFO("Channel %s - Name: %s", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel", (paramName != NULL) ? paramName : "");
 
 	if (NULL != channelHandle)
 	{
-		pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+		
 	}
 	else
 	{
@@ -523,6 +614,11 @@ const char* DataDistributionManagerOpenDDS::GetParameter(HANDLE channelHandle, c
 			if (m_bStartDCPSInfoRepo) return "true";
 			else return "false";
 		}
+		else if (!strcmp(paramName, "datadistributionmanager.opendds.dcpsinforepo.logonapplication"))
+		{
+			if (m_bDCPSInfoRepoLogOnApplication) return "true";
+			else return "false";
+		}
 		else if (!strcmp(paramName, "datadistributionmanager.opendds.dcpsinforepo.cmdlineargs"))
 		{
 			return m_DCPSInfoRepoCmdLine.c_str();
@@ -533,11 +629,13 @@ const char* DataDistributionManagerOpenDDS::GetParameter(HANDLE channelHandle, c
 
 HRESULT DataDistributionManagerOpenDDS::SeekChannel(HANDLE channelHandle, size_t position)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "SeekChannel");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
 
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "SeekChannel", "SubSystem not started.");
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
@@ -547,11 +645,13 @@ HRESULT DataDistributionManagerOpenDDS::SeekChannel(HANDLE channelHandle, size_t
 
 HRESULT DataDistributionManagerOpenDDS::DeleteChannel(HANDLE channelHandle)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "DeleteChannel");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
 
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "DeleteChannel", "SubSystem not started.");
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
@@ -561,11 +661,13 @@ HRESULT DataDistributionManagerOpenDDS::DeleteChannel(HANDLE channelHandle)
 
 HRESULT DataDistributionManagerOpenDDS::WriteOnChannel(HANDLE channelHandle, const char* key, size_t keyLen, void *buffer, size_t dataLen, const BOOL waitAll, const int64_t timestamp)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "WriteOnChannel");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
 
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "WriteOnChannel", "SubSystem not started.");
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
@@ -581,7 +683,7 @@ HRESULT DataDistributionManagerOpenDDS::WriteOnChannel(HANDLE channelHandle, con
 	DDS::InstanceHandle_t msg_handle;
 
 	if (CORBA::is_nil(pChannelConfiguration->channel_dw.in())) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "WriteOnChannel", "writer not ready.");
+		LOG_ERROR("Channel %s - writer not ready.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		return E_FAIL;
 	}
 
@@ -612,9 +714,9 @@ HRESULT DataDistributionManagerOpenDDS::WriteOnChannel(HANDLE channelHandle, con
 		}
 	}
 
-	if (pChannelConfiguration->GetCommitSync())
+	if (waitAll)
 	{
-		DDS::Duration_t timeout = DataDistributionManagerOpenDDS::DurationFromMs(pChannelConfiguration->GetProducerTimeout());
+		DDS::Duration_t timeout = DataDistributionManagerOpenDDS::DurationFromMs(pChannelConfiguration->GetCommitTimeout());
 		retCode = pChannelConfiguration->channel_dw->wait_for_acknowledgments(timeout);
 		if (retCode != DDS::RETCODE_OK) {
 			ACE_ERROR((LM_ERROR, ACE_TEXT("(%P|%t) ERROR: SPY wait_for_acknowledgments returned %d.\n"), retCode));
@@ -629,11 +731,13 @@ HRESULT DataDistributionManagerOpenDDS::WriteOnChannel(HANDLE channelHandle, con
 
 HRESULT DataDistributionManagerOpenDDS::ReadFromChannel(HANDLE channelHandle, int64_t offset, size_t *dataLen, void **param)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "ReadFromChannel");
+
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
 
 	if (!GetSubSystemStarted())
 	{
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, pChannelConfiguration->GetChannelName(), "ReadFromChannel", "SubSystem not started.");
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
@@ -643,14 +747,16 @@ HRESULT DataDistributionManagerOpenDDS::ReadFromChannel(HANDLE channelHandle, in
 
 HRESULT DataDistributionManagerOpenDDS::ChangeChannelDirection(HANDLE channelHandle, DDM_CHANNEL_DIRECTION direction)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(channelHandle);
+	TRACESTART("DataDistributionManagerOpenDDS", "ReadFromChannel");
+	CAST_CHANNEL(ChannelConfigurationOpenDDS)
+
 	DDM_CHANNEL_DIRECTION oldDirection = pChannelConfiguration->GetDirection();
 
-	if (GetSubSystemStarted())
+	if (!GetSubSystemStarted())
 	{
-		// update internal state following the direction
-
-
+		LOG_ERROR("Channel %s - SubSystem not started.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
+		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
+		return E_FAIL;
 	}
 	pChannelConfiguration->SetDirection(direction);
 	return TRUE;
@@ -658,6 +764,14 @@ HRESULT DataDistributionManagerOpenDDS::ChangeChannelDirection(HANDLE channelHan
 
 HRESULT DataDistributionManagerOpenDDS::Stop(DWORD milliseconds)
 {
+	TRACESTART("DataDistributionManagerOpenDDS", "Stop");
+
+	DataDistributionCommon::Stop(milliseconds);
+
+	if (m_hChildStd_OUT_Rd) CloseHandle(m_hChildStd_OUT_Rd);
+	if (m_hChildStd_OUT_Wr) CloseHandle(m_hChildStd_OUT_Wr);
+	if (m_hreadDataFromInfoRepo) CloseHandle(m_hreadDataFromInfoRepo);
+
 	return shutdown();
 }
 
@@ -670,6 +784,7 @@ TimeBase::TimeT DataDistributionManagerOpenDDS::get_timestamp() {
 
 HRESULT DataDistributionManagerOpenDDS::shutdown()
 {
+	TRACESTART("DataDistributionManagerOpenDDS", "shutdown");
 	// Cleanup
 	try {
 		if (!CORBA::is_nil(m_participant.in())) {
@@ -680,17 +795,19 @@ HRESULT DataDistributionManagerOpenDDS::shutdown()
 		}
 	}
 	catch (CORBA::Exception& e) {
-		Log(DDM_LOG_LEVEL::ERROR_LEVEL, "General", "shutdown", "Exception caught in cleanup. %s", e._info());
-		return FALSE;
+		LOG_ERROR("Exception caught in cleanup. %s", e._info());
+		return S_FALSE;
 	}
 	TheServiceParticipant->shutdown();
 	return S_OK;
 }
 
-HRESULT DataDistributionManagerOpenDDS::StartConsumerAndWait(pChannelConfigurationOpenDDS pChannelConfiguration, DWORD dwMilliseconds)
+HRESULT DataDistributionManagerOpenDDS::StartConsumerAndWait(ChannelConfigurationOpenDDS* pChannelConfiguration, DWORD dwMilliseconds)
 {
+	TRACESTART("DataDistributionManagerOpenDDS", "StartConsumerAndWait");
+
 	HRESULT result = S_OK;
-	pChannelConfiguration->Log(DDM_LOG_LEVEL::DEBUG_LEVEL, "StartConsumerAndWait", "Enter");
+	LOG_DEBUG("Channel %s - Enter.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 	pChannelConfiguration->bConsumerRun = TRUE;
 	pChannelConfiguration->hConsumerThread = CreateThread(0, 0, consumerHandler, pChannelConfiguration, 0, &pChannelConfiguration->dwConsumerThrId);
 	auto res = WaitForSingleObject(pChannelConfiguration->h_evtConsumer, dwMilliseconds);
@@ -705,21 +822,23 @@ HRESULT DataDistributionManagerOpenDDS::StartConsumerAndWait(pChannelConfigurati
 	default:
 		break;
 	}
-	pChannelConfiguration->Log(DDM_LOG_LEVEL::DEBUG_LEVEL, "StartConsumerAndWait", "Exit");
+	LOG_DEBUG("Channel %s - Exit.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 	return result;
 }
 
-void DataDistributionManagerOpenDDS::StopConsumer(pChannelConfigurationOpenDDS pChannelConfiguration)
+void DataDistributionManagerOpenDDS::StopConsumer(ChannelConfigurationOpenDDS* pChannelConfiguration)
 {
-	pChannelConfiguration->Log(DDM_LOG_LEVEL::DEBUG_LEVEL, "StopConsumer", "Enter");
+	TRACESTART("DataDistributionManagerOpenDDS", "StopConsumer");
+
+	LOG_DEBUG("Channel %s - Enter.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 	pChannelConfiguration->bConsumerRun = FALSE;
 	CloseHandle(pChannelConfiguration->hConsumerThread);
-	pChannelConfiguration->Log(DDM_LOG_LEVEL::DEBUG_LEVEL, "StopConsumer", "Exit");
+	LOG_DEBUG("Channel %s - Exit.", (pChannelConfiguration) ? pChannelConfiguration->GetChannelName() : "No channel");
 }
 
 DWORD __stdcall DataDistributionManagerOpenDDS::consumerHandler(void * argh)
 {
-	pChannelConfigurationOpenDDS pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(argh);
+	ChannelConfigurationOpenDDS* pChannelConfiguration = static_cast<ChannelConfigurationOpenDDS*>(argh);
 
 	pChannelConfiguration->Log(DDM_LOG_LEVEL::DEBUG_LEVEL, "consumerHandler", "Entering ");
 

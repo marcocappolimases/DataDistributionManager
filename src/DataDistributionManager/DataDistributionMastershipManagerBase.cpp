@@ -34,7 +34,7 @@ void DataDistributionMastershipManagerBase::OnALIVE(ALIVE* pALIVE)
 	{
 		// discard without log enything
 #if _DEBUG
-		m_pDataDistributionManagerSubsystem->Log(DDM_LOG_LEVEL::DEBUG_LEVEL, "DataDistributionMastershipManagerBase", "OnALIVE", "Discard my echo message");
+		Log(DDM_LOG_LEVEL::DEBUG_LEVEL, "DataDistributionMastershipManagerBase", "OnALIVE", "Discard my echo message");
 #endif
 		return;
 	}
@@ -51,7 +51,7 @@ void DataDistributionMastershipManagerBase::OnALIVE(ALIVE* pALIVE)
 		data->Status = pALIVE->Status;
 		data->Uptime = pALIVE->Uptime;
 		data->LastContactTime = GetUpTime();
-		clusterState.insert(std::pair<size_t, ClusterHealthElement*>(pALIVE->ServerId, data));
+		clusterState.insert(std::pair<int64_t, ClusterHealthElement*>(pALIVE->ServerId, data));
 		m_pMastershipCallback->OnClusterStateChange(DDM_CLUSTEREVENT::ADDSERVER, pALIVE->ServerId);
 	}
 	bool addRandomTime = false;
@@ -60,7 +60,7 @@ void DataDistributionMastershipManagerBase::OnALIVE(ALIVE* pALIVE)
 	ClusterHealthIterator it;
 	EnterCriticalSection(&m_csFlags);
 	m_IamNextPrimary = TRUE;
-	std::list<size_t> listToRemove;
+	std::list<int64_t> listToRemove;
 	for (it = clusterState.begin(); it != clusterState.end(); ++it)
 	{
 		if ((myTime - it->second->Uptime) > m_pDataDistributionManagerSubsystem->GetServerLostTimeout())
@@ -76,7 +76,7 @@ void DataDistributionMastershipManagerBase::OnALIVE(ALIVE* pALIVE)
 			}
 		}
 	}
-	std::list<size_t>::iterator it2;
+	std::list<int64_t>::iterator it2;
 	for (it2 = listToRemove.begin(); it2 != listToRemove.end(); ++it2)
 	{
 		delete clusterState.at(*it2);
@@ -85,7 +85,7 @@ void DataDistributionMastershipManagerBase::OnALIVE(ALIVE* pALIVE)
 	}
 	if (addRandomTime)
 	{
-		m_pDataDistributionManagerSubsystem->Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnALIVE", "Adding random time to my time");
+		Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnALIVE", "Adding random time to my time");
 		AddRandomToMyTime();
 	}
 	LeaveCriticalSection(&m_csFlags);
@@ -95,7 +95,7 @@ void DataDistributionMastershipManagerBase::OnHELLO_WELCOME(HELLO_WELCOME* pHELL
 {
 	if (pHELLO_WELCOME->ServerId == GetLocalServerId())
 	{
-		m_pDataDistributionManagerSubsystem->Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnHELLO_WELCOME", "Discard my echo message");
+		Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnHELLO_WELCOME", "Discard my echo message");
 		return;
 	}
 
@@ -106,7 +106,7 @@ void DataDistributionMastershipManagerBase::OnGOODBYE(GOODBYE* pGOODBYE)
 {
 	if (pGOODBYE->ServerId == GetLocalServerId())
 	{
-		m_pDataDistributionManagerSubsystem->Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnGOODBYE", "Discard my echo message");
+		Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnGOODBYE", "Discard my echo message");
 		return;
 	}
 
@@ -117,7 +117,7 @@ void DataDistributionMastershipManagerBase::OnSTATECHANGEREQUEST(STATECHANGEREQU
 {
 	if (pSTATECHANGEREQUEST->ServerId == GetLocalServerId())
 	{
-		m_pDataDistributionManagerSubsystem->Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnSTATECHANGEREQUEST", "Discard my echo request");
+		Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnSTATECHANGEREQUEST", "Discard my echo request");
 		return;
 	}
 
@@ -128,7 +128,7 @@ void DataDistributionMastershipManagerBase::OnSTATECHANGERESPONSE(STATECHANGERES
 {
 	if (pSTATECHANGERESPONSE->ServerId == GetLocalServerId())
 	{
-		m_pDataDistributionManagerSubsystem->Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnSTATECHANGERESPONSE", "Discard my echo response");
+		Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnSTATECHANGERESPONSE", "Discard my echo response");
 		return;
 	}
 

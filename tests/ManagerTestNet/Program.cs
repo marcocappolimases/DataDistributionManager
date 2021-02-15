@@ -40,7 +40,7 @@ namespace ManagerTestNet
     {
         public override void OnDataAvailable(string channelName, string key, byte[] buffer)
         {
-           var str = Encoding.UTF8.GetString(buffer);
+            var str = Encoding.UTF8.GetString(buffer);
             Console.WriteLine("Received data from {0} with key {1} and buffer {2}", channelName, key, str);
         }
 
@@ -57,32 +57,23 @@ namespace ManagerTestNet
 
         static void Main(string[] args)
         {
+            MySmartDataDistribution dataDistribution = new MySmartDataDistribution();
+            OpenDDSConfiguration conf = null;
+            HRESULT hRes = HRESULT.S_OK;
             if (args.Length == 0)
             {
-                Console.WriteLine("Missing configuration path on command line");
-                return;
+                conf = new OpenDDSConfiguration();
+                conf.DCPSInfoRepoAutostart = true;
+                conf.DCPSInfoRepoCommandLine = "-ORBEndpoint iiop://localhost:12345";
+                conf.DCPSConfigFile = "dds_tcp_conf.ini";
+                conf.DCPSTransportDebugLevel = 10;
+
+                hRes = dataDistribution.Initialize(conf);
             }
-            byte[] buffer;
-            uint counter = 100;
-
-            int pid = Process.GetCurrentProcess().Id;
-
-            var str = string.Format("{0:10}", pid);
-            buffer = Encoding.UTF8.GetBytes(str);
-
-            DDM_CHANNEL_DIRECTION direction = DDM_CHANNEL_DIRECTION.TRANSMITTER;
-
-            MySmartDataDistribution dataDistribution = new MySmartDataDistribution();
-
-            OpenDDSConfiguration conf = new OpenDDSConfiguration();
-            conf.DCPSInfoRepoAutostart = true;
-            conf.DCPSInfoRepoCommandLine = "-ORBEndpoint iiop://localhost:12345";
-            conf.DCPSConfigFile = "dds_tcp_conf.ini";
-            conf.DCPSTransportDebugLevel = 10;
-
-            var hRes = dataDistribution.Initialize(conf);
-
-            // var hRes = dataDistribution.Initialize(args[0], str, "KafkaManager");
+            else
+            {
+                hRes = dataDistribution.Initialize(args[0]);
+            }
 
             if (hRes.Failed)
             {
@@ -99,19 +90,20 @@ namespace ManagerTestNet
 
             MySmartDataDistributionChannel testChannel = dataDistribution.CreateSmartChannel<MySmartDataDistributionChannel>("test");
 
-            Console.WriteLine("After StartMasterConsumerAndWait...\n");
+            Console.WriteLine("After CreateSmartChannel...\n");
 
             testChannel.StartChannel(uint.MaxValue);
 
-            Thread.Sleep(10000);
-
+            uint counter = 100;
+            int pid = Process.GetCurrentProcess().Id;
+            var str = string.Format("{0:10}", pid);
+            DDM_CHANNEL_DIRECTION direction = DDM_CHANNEL_DIRECTION.TRANSMITTER;
             Console.WriteLine("Starting sending...\n");
             while (true)
             {
-                if (direction.HasFlag(DDM_CHANNEL_DIRECTION.TRANSMITTER) ? testChannel.WriteOnChannel(null, buffer) : true)
+                if (direction.HasFlag(DDM_CHANNEL_DIRECTION.TRANSMITTER) ? testChannel.WriteOnChannel(null, str) : true)
                 {
                     str = string.Format("{0:10}", counter++);
-                    buffer = Encoding.UTF8.GetBytes(str);
                     if ((counter % THRESHOLD) == 0) Console.WriteLine("SendData Reached {0}", counter);
                 }
                 Thread.Sleep(1000);

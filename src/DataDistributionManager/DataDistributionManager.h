@@ -79,6 +79,13 @@ public:
 	static ITimeMeasureWrapper* create();
 };
 
+class __declspec(dllexport) IDataDistributionLog
+{
+public:
+	virtual void Log(const DDM_LOG_LEVEL level, const char* sourceName, const char* function, const char* format, ...) = 0;
+	virtual void Log(const DDM_LOG_LEVEL level, const char* sourceName, const char* function, const char* format, va_list args) = 0;
+};
+
 class __declspec(dllexport) IDataDistributionCallback
 {
 public:
@@ -149,11 +156,11 @@ public:
 	static IDataDistributionChannelCallback *create(void* opaque, dataDistributionUnderlyingEvent uEventCb);
 };
 
-typedef void(__cdecl * dataDistributionOnClusterStateChange)(void* opaque, DDM_CLUSTEREVENT change, size_t serverid);
+typedef void(__cdecl * dataDistributionOnClusterStateChange)(void* opaque, DDM_CLUSTEREVENT change, int64_t serverid);
 typedef void(__cdecl * dataDistributionOnStateChange)(void* opaque, DDM_INSTANCE_STATE newState, DDM_INSTANCE_STATE oldState);
-typedef void(__cdecl * dataDistributionOnStateReady)(void* opaque, void* pState, size_t len);
+typedef void(__cdecl * dataDistributionOnStateReady)(void* opaque, void* pState, int64_t len);
 typedef void(__cdecl * dataDistributionOnRequestedState)(void* opaque, void** pState, size_t* len);
-typedef void(__cdecl * dataDistributionOnMultiplePrimary)(void* opaque, size_t myId, size_t otherId);
+typedef void(__cdecl * dataDistributionOnMultiplePrimary)(void* opaque, int64_t myId, int64_t otherId);
 typedef void(__cdecl * dataDistributionFirstStateChange)(void* opaque, DDM_INSTANCE_STATE newState);
 typedef void(__cdecl * dataDistributionChangingState)(void* opaque, DDM_INSTANCE_STATE oldState, DDM_INSTANCE_STATE newState);
 typedef void(__cdecl * dataDistributionChangedState)(void* opaque, DDM_INSTANCE_STATE newState);
@@ -161,11 +168,11 @@ typedef void(__cdecl * dataDistributionChangedState)(void* opaque, DDM_INSTANCE_
 class __declspec(dllexport) IDataDistributionMastershipCallback
 {
 public:
-	virtual void OnClusterStateChange(DDM_CLUSTEREVENT change, size_t serverid) = 0;
+	virtual void OnClusterStateChange(DDM_CLUSTEREVENT change, int64_t serverid) = 0;
 	virtual void OnStateChange(DDM_INSTANCE_STATE newState, DDM_INSTANCE_STATE oldState) = 0;
-	virtual void OnStateReady(void* pState, size_t len) = 0;
+	virtual void OnStateReady(void* pState, int64_t len) = 0;
 	virtual void OnRequestedState(void** pState, size_t* len) = 0;
-	virtual void OnMultiplePrimary(size_t myId, size_t otherId) = 0;
+	virtual void OnMultiplePrimary(int64_t myId, int64_t otherId) = 0;
 	virtual void FirstStateChange(DDM_INSTANCE_STATE newState) = 0;
 	virtual void ChangingState(DDM_INSTANCE_STATE oldState, DDM_INSTANCE_STATE newState) = 0;
 	virtual void ChangedState(DDM_INSTANCE_STATE newState) = 0;
@@ -207,13 +214,11 @@ public:
 	virtual	HRESULT Stop(DWORD dwMilliseconds) = 0;
 };
 
-class __declspec(dllexport) IDataDistributionSubsystem : public IDataDistributionTransport
+class __declspec(dllexport) IDataDistributionSubsystem : public IDataDistributionTransport, public IDataDistributionLog
 {
 public:
 	virtual HRESULT Initialize(IDataDistributionCallback*, const char* conf_file, const char* szMyAddress = NULL, const char* channelTrailer = NULL) = 0;
 	virtual HRESULT Initialize(IDataDistributionCallback*, const char* arrayParams[], int len, const char* szMyAddress = NULL, const char* channelTrailer = NULL) = 0;
-	virtual void Log(const DDM_LOG_LEVEL level, const char* sourceName, const char* function, const char* format, ...) = 0;
-	virtual void Log(const DDM_LOG_LEVEL level, const char* sourceName, const char* function, const char* format, va_list args) = 0;
 	virtual	IDataDistributionCallback* GetCallbacks() = 0;
 };
 

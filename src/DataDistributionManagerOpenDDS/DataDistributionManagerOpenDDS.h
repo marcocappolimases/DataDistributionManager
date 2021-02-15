@@ -40,8 +40,6 @@
 
 class ChannelConfigurationOpenDDS;
 
-typedef ChannelConfigurationOpenDDS *pChannelConfigurationOpenDDS;
-
 class __declspec(dllexport) DataDistributionManagerOpenDDS : public DataDistributionCommon, public ACE_Log_Msg_Callback
 {
 public:
@@ -72,12 +70,13 @@ private:
 	HRESULT shutdown();
 	TimeBase::TimeT get_timestamp();
 	static DDS::Duration_t DurationFromMs(int ms);
-	HRESULT conf_init(pChannelConfigurationOpenDDS configuration, const char* arrayParams[], int len);
-	HRESULT read_config_file(pChannelConfigurationOpenDDS configuration, const char* arrayParams[], int len);
+	HRESULT conf_init(ChannelConfigurationOpenDDS* configuration, const char* arrayParams[], int len);
+	HRESULT read_config_file(ChannelConfigurationOpenDDS* configuration, const char* arrayParams[], int len);
 	void SetCmdLine(std::string cmdLine);
-	HRESULT StartConsumerAndWait(pChannelConfigurationOpenDDS pChannelConfiguration, DWORD dwMilliseconds);
-	void StopConsumer(pChannelConfigurationOpenDDS pChannelConfiguration);
+	HRESULT StartConsumerAndWait(ChannelConfigurationOpenDDS* pChannelConfiguration, DWORD dwMilliseconds);
+	void StopConsumer(ChannelConfigurationOpenDDS* pChannelConfiguration);
 	static DWORD __stdcall consumerHandler(void * argh);
+	static DWORD __stdcall readDataFromInfoRepo(void * argh);
 	HRESULT InitializeInfoRepo();
 private:
 	::DDS::DomainId_t m_domainId;
@@ -92,18 +91,24 @@ private:
 	char** m_argv;
 
 	::CORBA::Boolean m_bStartDCPSInfoRepo;
+	::CORBA::Boolean m_bDCPSInfoRepoLogOnApplication;
 	std::string	m_DCPSInfoRepoCmdLine;
+#define BUFSIZE 4096 
+
+	HANDLE m_hChildStd_OUT_Rd;
+	HANDLE m_hChildStd_OUT_Wr;
+	HANDLE m_hreadDataFromInfoRepo;
 
 	int  m_ServerLostTimeout;
 
-	std::vector<pChannelConfigurationOpenDDS> channelVector;
+	std::vector<ChannelConfigurationOpenDDS*> channelVector;
 };
 
 class ChannelConfigurationOpenDDS : public ChannelConfiguration
 {
 public:
 	ChannelConfigurationOpenDDS(const char* channelName, DDM_CHANNEL_DIRECTION direction, DataDistributionManagerOpenDDS* mainManager, IDataDistributionChannelCallback* Cb)
-		: ChannelConfiguration(channelName,direction, mainManager, Cb)
+		: ChannelConfiguration(channelName, direction, mainManager, Cb)
 	{
 		h_evtConsumer = CreateEvent(0, true, false, NULL);
 	}
