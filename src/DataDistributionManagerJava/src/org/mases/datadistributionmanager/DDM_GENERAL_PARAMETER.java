@@ -21,35 +21,47 @@ package org.mases.datadistributionmanager;
 import java.util.*;
 
 /**
- * Startup state
+ * Direction of the channel
  */
-public enum CHANNEL_STARTUP_TYPE {
+public enum DDM_GENERAL_PARAMETER {
     /**
-     * Undefined
+     * Max message size
      */
-    UNDEFINED("UNDEFINED", 0X1),
+    MAX_MESSAGE_SIZE("MAX_MESSAGE_SIZE", 1),
     /**
-     * Created
+     * Server lost timeout
      */
-    CREATED("CREATED", 0X2),
+    SERVER_LOST_TIMEOUT("SERVER_LOST_TIMEOUT", 2),
     /**
-     * Started
+     * Create channel timeout
      */
-    STARTED("STARTED", 0X4),
+    CREATE_CHANNEL_TIMEOUT("CREATE_CHANNEL_TIMEOUT", 3),
     /**
-     * Stopped
+     * Seek channel timeout
      */
-    STOPPED("STOPPED", 0X8),
+    CHANNEL_SEEK_TIMEOUT("CHANNEL_SEEK_TIMEOUT", 4),
     /**
-     * Disconnected
+     * Timeout on first connection
      */
-    DISCONNECTED("DISCONNECTED", 0X10);
+    FIRST_CONNECTION_TIMEOUT("FIRST_CONNECTION_TIMEOUT", 5),
+    /**
+     * Timeout of Keep Alive
+     */
+    KEEP_ALIVE_TIMEOUT("KEEP_ALIVE_TIMEOUT", 6),
+    /**
+     * Consumer timeout
+     */
+    CONSUMER_TIMEOUT("CONSUMER_TIMEOUT", 7),
+    /**
+     * Producer timeout
+     */
+    PRODUCER_TIMEOUT("PRODUCER_TIMEOUT", 8);
 
-    private static final Map<String, CHANNEL_STARTUP_TYPE> BY_LABEL = new HashMap<>();
-    private static final Map<Integer, CHANNEL_STARTUP_TYPE> BY_ATOMIC_NUMBER = new HashMap<>();
+    private static final Map<String, DDM_GENERAL_PARAMETER> BY_LABEL = new HashMap<>();
+    private static final Map<Integer, DDM_GENERAL_PARAMETER> BY_ATOMIC_NUMBER = new HashMap<>();
 
     static {
-        for (CHANNEL_STARTUP_TYPE e : values()) {
+        for (DDM_GENERAL_PARAMETER e : values()) {
             BY_LABEL.put(e.label, e);
             BY_ATOMIC_NUMBER.put(e.atomicNumber, e);
         }
@@ -58,18 +70,18 @@ public enum CHANNEL_STARTUP_TYPE {
     public final String label;
     public final int atomicNumber;
 
-    private CHANNEL_STARTUP_TYPE(String label, int atomicNumber) {
+    private DDM_GENERAL_PARAMETER(String label, int atomicNumber) {
         this.label = label;
         this.atomicNumber = atomicNumber;
     }
 
     // ... fields, constructor, methods
 
-    public static CHANNEL_STARTUP_TYPE valueOfLabel(String label) {
+    public static DDM_GENERAL_PARAMETER valueOfLabel(String label) {
         return BY_LABEL.get(label);
     }
 
-    public static CHANNEL_STARTUP_TYPE valueOfAtomicNumber(int number) {
+    public static DDM_GENERAL_PARAMETER valueOfAtomicNumber(int number) {
         return BY_ATOMIC_NUMBER.get(number);
     }
 

@@ -26,16 +26,16 @@ import java.util.HashMap;
  */
 public class OpenDDSConfiguration extends CommonConfiguration {
     HashMap<String, String> commandLineKeyValuePair = new HashMap<String, String>();
-    final String DCPSInfoRepoAutostartKey = "datadistributionmanager.opendds.dcpsinforepo.autostart";
-    final String DCPSInfoRepoLogOnApplicationKey = "datadistributionmanager.opendds.dcpsinforepo.logonapplication";
-    final String DCPSInfoRepoCommandLineKey = "datadistributionmanager.opendds.dcpsinforepo.cmdlineargs";
-    final String CommandLineKey = "datadistributionmanager.opendds.cmdlineargs";
-    final String DomainIdKey = "datadistributionmanager.opendds.domain_id";
-    final String DCPSConfigFileKey = "DCPSConfigFile";
-    final String DCPSTransportDebugLevelKey = "DCPSTransportDebugLevel";
+    public static final String DCPSInfoRepoAutostartKey = "datadistributionmanager.opendds.dcpsinforepo.autostart";
+    public static final String DCPSInfoRepoLogOnApplicationKey = "datadistributionmanager.opendds.dcpsinforepo.logonapplication";
+    public static final String DCPSInfoRepoCommandLineKey = "datadistributionmanager.opendds.dcpsinforepo.cmdlineargs";
+    public static final String CommandLineKey = "datadistributionmanager.opendds.cmdlineargs";
+    public static final String DomainIdKey = "datadistributionmanager.opendds.domain_id";
+    public static final String DCPSConfigFileKey = "DCPSConfigFile";
+    public static final String DCPSTransportDebugLevelKey = "DCPSTransportDebugLevel";
 
     /**
-     * Ctor
+     * Initialize a new instance of {@link OpenDDSConfiguration}
      */
     public OpenDDSConfiguration() {
         super("opendds", "DataDistributionManagerOpenDDS.dll");
