@@ -50,6 +50,7 @@
     <Compile Include="..\..\ProductInformation\ComponentVersion.cs">
       <Link>Properties\ComponentVersion.c</Link>
     </Compile>
+    <Compile Include="BaseConfiguration.cs" />
     <Compile Include="GlobalConfiguration.cs" />
     <Compile Include="CommonConfiguration.cs" />
     <Compile Include="HelperClass.cs" />
@@ -58,7 +59,9 @@
     <Compile Include="Interop\HRESULTType.cs" />
     <Compile Include="Interop\UnderlyingEvent.cs" />
     <Compile Include="ISmartDataDistributionMastership.cs" />
+    <Compile Include="KafkaChannelConfiguration.cs" />
     <Compile Include="KafkaConfiguration.cs" />
+    <Compile Include="OpenDDSChannelConfiguration.cs" />
     <Compile Include="OpenDDSConfiguration.cs" />
     <Compile Include="SmartDataDistribution.cs" />
     <Compile Include="SmartDataDistributionChannel.cs" />

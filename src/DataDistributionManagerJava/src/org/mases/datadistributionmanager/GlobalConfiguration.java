@@ -18,27 +18,33 @@
 
 package org.mases.datadistributionmanager;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  * The global configuration class
  */
-public abstract class GlobalConfiguration implements IConfiguration {
+public abstract class GlobalConfiguration extends BaseConfiguration {
     public static final String ProtocolKey = "datadistributionmanager.common.protocol";
     public static final String ProtocolLibraryKey = "datadistributionmanager.common.protolib";
     public static final String MaxMessageSizeKey = "datadistributionmanager.maxmessagesize";
     public static final String ServerLostTimeoutKey = "datadistributionmanager.timeout.serverlost";
     public static final String GlobalLogLevelKey = "datadistributionmanager.loglevel.global";
 
-    /**
-     * The list of key/value pairs
-     */
-    protected HashMap<String, String> keyValuePair = new HashMap<String, String>();
-
     GlobalConfiguration(String protocol, String protolib) {
         setProtocol(protocol);
         setProtocolLibrary(protolib);
+    }
+
+    /**
+     * Duplicates a configuration
+     * 
+     * @param originalConf {@link IConfiguration} to duplicate
+     */
+    GlobalConfiguration(IConfiguration originalConf) {
+        GlobalConfiguration conf = (GlobalConfiguration) originalConf;
+        if (conf != null) {
+            keyValuePair = new HashMap<String, String>(conf.keyValuePair);
+        }
     }
 
     /**
@@ -143,14 +149,5 @@ public abstract class GlobalConfiguration implements IConfiguration {
         if (!keyValuePair.containsKey(ProtocolKey) && !keyValuePair.containsKey(ProtocolLibraryKey)) {
             throw new IllegalArgumentException("Missing Protocol or ProtocolLibrary");
         }
-    }
-
-    public String[] getConfiguration() throws IllegalArgumentException {
-        ArrayList<String> lst = new ArrayList<String>();
-        for (String key : keyValuePair.keySet()) {
-            lst.add(String.format("%s=%s", key, keyValuePair.get(key)));
-        }
-        String[] array = new String[lst.size()];
-        return lst.toArray(array);
     }
 }
