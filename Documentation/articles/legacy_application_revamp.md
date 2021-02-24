@@ -1,8 +1,9 @@
 # Legacy COM Application
 
-For many years Microsoft has based its products on COM (Component Object Model) and its network extension DCOM (Distributed COM). Many customer built their infrastructure and products over COM techonology.
+For many years Microsoft based its products on COM (Component Object Model) and its network extension DCOM (Distributed COM). Many customer built their infrastructure and products over COM technology.
 The technology is mature, but over the years it becomes legacy; there are many disadvantages when it is needed to use COM based application over networks and cybersecurity is mandatory today.
-To protect these applications it is needed to take in place some countermeasures against malicious attachers or rewrite the entire applications with cyber-security in mind.
+To protect these applications it is needed to put in place countermeasures against malicious attachers or rewrite the entire applications with cyber-security in mind.
+
 
 With **Data Distribution Manager** we overcome the previous problems, revamping legacy COM applications at transport layer.
 
@@ -17,7 +18,7 @@ Looking at the figure above there is a common joining point: _DCOM network proto
 
 ## COM/DCOM over **Data Distribution Manager**
 
-To overcome the _DCOM network protocol_ we had developed a specific library based on **Data Distribution Manager** which is able to replace the transport layer and use all features available in **Data Distribution Manager**.
+To overcome the _DCOM network protocol_ we developed a library based on **Data Distribution Manager** which replace the transport layer and use all features available in **Data Distribution Manager**.
 
 The following figure shows a simple overview:
 
@@ -29,10 +30,10 @@ Depending on application and infrastructure requirements it is possible to choos
 ### **Data Distribution Manager** over OpenDDS 
 
 To have an overview on the protocol navigate on https://opendds.org/.
-It is more or less close to DCOM. It is based over a CORBA implementation. **Data Distribution Manager** has a simple IDL to have a common shared layer with other tranport protocols (e.g. Apache Kafka).
-With OpenDDS the component acts as server like in DCOM and clients connects to it using OpenDDS. With OpenDDS it is not needed to have an external infrastruture, but clients shall be aware where is located DCPSInfoRepo or can use static discovery.
+It is more or less close to DCOM. It is based over a CORBA implementation. **Data Distribution Manager** has a simple IDL to have a common shared layer with other transport protocols (e.g. Apache Kafka). 
+With OpenDDS the component acts as server like in DCOM and clients connects to it using OpenDDS. With OpenDDS it is not needed to have an external infrastructure, but clients shall be aware where is located DCPSInfoRepo or can use static discovery. 
 **Data Distribution Manager** is able to start DCPSInfoRepo within the COM Server, anyway clients shall know the DCPSInfoRepo endpoint.
-OpenDDS can be configured in multiple way, can use multiple wire protocols and achieve the needs to replace _DCOM network protocol_ within some network conditions.
+OpenDDS can be configured in multiple way, can use multiple wire protocols and achieve the needs to replace __DCOM network protocol__ within some network conditions.
 
 ### **Data Distribution Manager** over Apache Kafka 
 
@@ -46,7 +47,7 @@ So what are the advantages to use Apache Kafka? Try to list some of them:
 
 ## COM over the Cloud
 
-With **Data Distribution Manager** over Apache Kafka it is possible to think to have COM applications over the Cloud. Many cloud players today have in their datacenters an installation of Apache Kafka.
+With **Data Distribution Manager** over Apache Kafka it is possible to have COM applications over the Cloud. Many cloud players today have an installation of Apache Kafka in their datacenters.
 So a legacy COM application can be revamped to be internet-aware.
 
 If the article is interesting and want to know more contact us.
