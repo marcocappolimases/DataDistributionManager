@@ -4,8 +4,8 @@
   href: api/
   homepage: api/index.md
 - name: Java Api Documentation
-  href: javadoc/
-  homepage: javadoc/index.html
+  href: articles/
+  homepage: articles/framed.html
 - name: Github sites
   dropdown: true
   href: https://masesgroup.github.io/
