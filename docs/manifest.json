@@ -2484,6 +2484,18 @@
       "version": ""
     },
     {
+      "type": "Conceptual",
+      "source_relative_path": "articles/framed.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/framed.html",
+          "hash": "3gnkz/GAjsiFKbNxrDWC8g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
       "log_codes": [
         "InvalidFileLink"
       ],
@@ -2492,7 +2504,7 @@
       "output": {
         ".html": {
           "relative_path": "articles/intro.html",
-          "hash": "mhsHcxyUPyHERQbxZG7Zsw=="
+          "hash": "ZuGuXzyu2gZu7zwxfEBScQ=="
         }
       },
       "is_incremental": false,
@@ -2504,7 +2516,7 @@
       "output": {
         ".html": {
           "relative_path": "articles/legacy_application_revamp.html",
-          "hash": "lBPc45iUPETWSOsuFxyPEw=="
+          "hash": "oFi1wQjgyprBxRu1mIMvnw=="
         }
       },
       "is_incremental": false,
@@ -2516,7 +2528,7 @@
       "output": {
         ".html": {
           "relative_path": "articles/manual_build.html",
-          "hash": "w/onCJsiCVrysGuPTYhMwQ=="
+          "hash": "iocLXSay0PtUS55KCrQ8/w=="
         }
       },
       "is_incremental": false,
@@ -2555,7 +2567,7 @@
       "output": {
         ".html": {
           "relative_path": "articles/usage.html",
-          "hash": "B+kFdVVonoUuiI1djEoC2w=="
+          "hash": "+BeWFfe/t5juYp0aoAxv4Q=="
         }
       },
       "is_incremental": false,
@@ -2713,7 +2725,7 @@
         "ConceptualDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 7,
+          "total_file_count": 8,
           "skipped_file_count": 0
         },
         "ManagedReferenceDocumentProcessor": {
