@@ -1,7 +1,7 @@
 # Welcome to **Data Distribution Manager**
 
-A reliable subsystem able to distribute data across multiple datacenters using multiple technologies.
-It is the core of [Sinapse](https://www.sinapsesystem.com) High Avalailablity, now we made it available for everyone.
+A reliable subsystem to distribute data across datacenters using multiple technologies in a transparent manner.
+It is the core of [Sinapse](https://www.sinapsesystem.com) High Availability, now we made it available for everyone.
 
 This project adheres to the Contributor [Covenant code of conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to coc_reporting@masesgroup.com.
 
