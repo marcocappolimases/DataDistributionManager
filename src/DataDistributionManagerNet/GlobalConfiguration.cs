@@ -80,6 +80,7 @@ namespace MASES.DataDistributionManager.Bindings
             set
             {
                 keyValuePair[ProtocolKey] = value;
+                EmitPropertyChanged("Protocol");
             }
         }
 
@@ -97,6 +98,7 @@ namespace MASES.DataDistributionManager.Bindings
             set
             {
                 keyValuePair[ProtocolLibraryKey] = value;
+                EmitPropertyChanged("ProtocolLibrary");
             }
         }
 
@@ -114,6 +116,7 @@ namespace MASES.DataDistributionManager.Bindings
             set
             {
                 keyValuePair[MaxMessageSizeKey] = value.ToString();
+                EmitPropertyChanged("MaxMessageSize");
             }
         }
 
@@ -131,6 +134,7 @@ namespace MASES.DataDistributionManager.Bindings
             set
             {
                 keyValuePair[ServerLostTimeoutKey] = value.ToString();
+                EmitPropertyChanged("ServerLostTimeout");
             }
         }
 
@@ -148,12 +152,11 @@ namespace MASES.DataDistributionManager.Bindings
             set
             {
                 keyValuePair[GlobalLogLevelKey] = value.ToIntString();
+                EmitPropertyChanged("GlobalLogLevel");
             }
         }
 
-        /// <summary>
-        /// Checks the configuration for mandatory information
-        /// </summary>
+        /// <inheritdoc/>
         protected override void CheckConfiguration()
         {
             if (!keyValuePair.ContainsKey(ProtocolKey) && !keyValuePair.ContainsKey(ProtocolLibraryKey))

@@ -18,8 +18,6 @@ This project aims to create a library set, exposing a simple interface, to manag
 
 ## Build sequence
 
-**Until now the generation can be done manually. Soon will be setted-up an automatic workflow.**
-
 * Clone the repository
 
 * Open _VisualStudio Developer Command Prompt_
@@ -27,7 +25,7 @@ This project aims to create a library set, exposing a simple interface, to manag
 * Retrieves the OpenDDS implementation from github repository:
 
 ```
-git.exe submodule update --init -- "third_party/OpenDDS"
+git.exe submodule update --init
 ```
 
 * Build the OpenDDS libraries:

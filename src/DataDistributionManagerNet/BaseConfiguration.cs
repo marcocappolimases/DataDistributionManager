@@ -17,18 +17,26 @@
 */
 
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace MASES.DataDistributionManager.Bindings
 {
     /// <summary>
     /// The base configuration class
     /// </summary>
-    public abstract class BaseConfiguration : IConfiguration
+    public abstract class BaseConfiguration : IConfiguration, INotifyPropertyChanged
     {
+        internal Dictionary<string, string> keyValuePair = new Dictionary<string, string>();
+        /// <inheritdoc/>
+        public event PropertyChangedEventHandler PropertyChanged;
         /// <summary>
-        /// The list of key/value pairs
+        /// Emits <see cref="BaseConfiguration.PropertyChanged"/>
         /// </summary>
-        protected Dictionary<string, string> keyValuePair = new Dictionary<string, string>();
+        /// <param name="propertyName">Property changed</param>
+        protected void EmitPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         /// <summary>
         /// Checks the configuration for mandatory information
@@ -38,7 +46,7 @@ namespace MASES.DataDistributionManager.Bindings
 
         }
 
-        /// <see cref="IConfiguration.Configuration"/>
+        /// <inheritdoc/>
         public virtual string[] Configuration
         {
             get

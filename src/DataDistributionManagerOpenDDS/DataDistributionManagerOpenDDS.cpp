@@ -124,7 +124,7 @@ HRESULT DataDistributionManagerOpenDDS::read_config_file(ChannelConfigurationOpe
 		std::string n = line.substr(0, f);
 		std::string v = line.substr(f + 1);
 
-		v = CheckConfigurationParameter(n, v);
+		v = CheckConfigurationParameter((NULL != configuration) ? configuration->GetChannelName() : NULL, n, v);
 
 		SetParameter(configuration, n.c_str(), v.c_str());
 	}
@@ -354,6 +354,7 @@ HRESULT DataDistributionManagerOpenDDS::Lock(HANDLE channelHandle, DWORD timeout
 		pChannelConfiguration->OnConditionOrError(DDM_UNDERLYING_ERROR_CONDITION::DDM_SUBSYSTEM_NOT_STARTED, 0, "SubSystem not started.");
 		return E_FAIL;
 	}
+
 	return pChannelConfiguration->SetLockState();
 }
 
@@ -1241,6 +1242,11 @@ void DataDistributionManagerOpenDDS::SetParameter(HANDLE channelHandle, const ch
 		else if (!strcmp(paramName, "datadistributionmanager.opendds.domain_id"))
 		{
 			m_domainId = atoi(paramValue);
+			return;
+		}
+		else if (!strcmp(paramName, "datadistributionmanager.opendds.dcps.debug_level"))
+		{
+			OpenDDS::DCPS::set_DCPS_debug_level(atoi(paramValue));
 			return;
 		}
 		else if (!strcmp(paramName, "datadistributionmanager.opendds.dcpsinforepo.autostart"))

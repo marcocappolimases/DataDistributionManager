@@ -17,6 +17,7 @@
 */
 
 using MASES.DataDistributionManager.Bindings;
+using MASES.DataDistributionManager.Bindings.Configuration;
 using MASES.DataDistributionManager.Bindings.Interop;
 using System;
 using System.Diagnostics;
@@ -27,9 +28,14 @@ namespace ManagerTestNet
 {
     class MySmartDataDistribution : SmartDataDistribution
     {
-        public override void OnLogging(IntPtr IDataDistribution_nativePtr, DDM_LOG_LEVEL level, string source, string function, string errStr)
+        public override string OnConfiguration(string channelName, string key, string value)
         {
-            base.OnLogging(IDataDistribution_nativePtr, level, source, function, errStr);
+            return base.OnConfiguration(channelName, key, value);
+        }
+
+        public override void OnLogging(DDM_LOG_LEVEL level, string source, string function, string errStr)
+        {
+            base.OnLogging(level, source, function, errStr);
 
             Console.WriteLine("Timestamp: {0} Source: {1} Function: {2} - {3}", DateTime.Now, source, function, errStr);
         }
@@ -73,7 +79,7 @@ namespace ManagerTestNet
                     DCPSInfoRepo = new OpenDDSConfiguration.DCPSInfoRepoConfiguration()
                     {
                         Autostart = true,
-                        CommandLine = "-ORBEndpoint iiop://localhost:12345",
+                        ORBEndpoint = "iiop://localhost:12345",
                     },
                     DomainParticipantQos = new DomainParticipantQosConfiguration()
                     {
@@ -122,7 +128,7 @@ namespace ManagerTestNet
                     },
                     DurabilityQosPolicy = new DurabilityQosPolicyConfiguration()
                     {
-                        DurabilityQosPolicy = DurabilityQosPolicyConfiguration.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
+                        Kind = DurabilityQosPolicyConfiguration.DurabilityQosPolicyKind.TRANSIENT_DURABILITY_QOS
                     }
                 },
                 SubscriberQos = new SubscriberQosConfiguration()
@@ -157,6 +163,11 @@ namespace ManagerTestNet
                 }
                 Thread.Sleep(1000);
             }
+        }
+
+        private static void DataDistribution_Logging(object sender, LoggingEventArgs e)
+        {
+            throw new NotImplementedException();
         }
     }
 }
