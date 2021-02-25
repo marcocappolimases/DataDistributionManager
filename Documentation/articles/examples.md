@@ -3,7 +3,7 @@
 ## .NET
 
 To execute the *dotnet* example do the following steps:
-1. open a windows command prompt (cmd1)
+1. open a windows command prompt
 2. cd to the examples/dotnet/TransmitterReceiver folder
 
 ```
@@ -34,3 +34,34 @@ This will also start the DCPSInfoRepo.exe
 $> TransmitterReceiver.exe t
 ```
 This start the application in transmission mode, in the other command prompt is visible the start of communications.
+
+## Java
+
+To execute the *java* example do the following steps:
+1. open a windows command prompt
+2. cd to the examples/java/TransmitterReceiver folder
+
+```
+$> cd [PATH TO EXAMPLES FOLDER]
+$> cd java\TransmitterReceiver
+```
+3. If needed set the %JDK_ROOT_FOLDER% environment variable to your jdk folder (e.g. C:\Program Files\Java\jdk-15.0.2)
+```
+$> set JDK_ROOT_FOLDER=[YOUR_PATH_TO_JDK_FOLDER]
+```
+4. Put the **datadistributionmanager.jar** file in the application folder, the file is available at (latest release)[https://github.com/marcocappolimases/DataDistributionManager/releases/latest]
+5. Compile the java source
+```
+$> compile.bat
+```
+6. execute the example as receiver
+```
+$> startreceiver.bat
+```
+This start the receiver in a new terminal window will also start the DCPSInfoRepo.exe
+7. execute the example as transmitter
+```
+$> starttransmitter.bat
+```
+This start the application in transmission mode in a new terminal window, in the other terminal window is visible the start of communications.
+
