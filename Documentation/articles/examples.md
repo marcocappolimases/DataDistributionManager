@@ -58,10 +58,12 @@ $> compile.bat
 ```
 $> startreceiver.bat
 ```
-This start the receiver in a new terminal window will also start the DCPSInfoRepo.exe
-7. execute the example as transmitter
+This start the receiver and will also start the DCPSInfoRepo.exe
+
+7. open a new windows command prompt and do steps 2 and 3
+8. execute the example as transmitter
 ```
 $> starttransmitter.bat
 ```
-This start the application in transmission mode in a new terminal window, in the other terminal window is visible the start of communications.
+This start the application in transmission mode in the new terminal window, in the other terminal window is visible the start of communications.
 
