@@ -23,7 +23,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 
-namespace ManagerTestNet
+namespace ManagerTestNet2
 {
     class Program
     {
@@ -31,10 +31,12 @@ namespace ManagerTestNet
 
         static void Main(string[] args)
         {
+            DDM_CHANNEL_DIRECTION direction = DDM_CHANNEL_DIRECTION.RECEIVER;
+
             SmartDataDistribution dataDistribution = new SmartDataDistribution();
             dataDistribution.LoggingEvent += DataDistribution_LoggingEvent;
             OpenDDSConfiguration conf = null;
-            HRESULT hRes = HRESULT.S_OK;
+            OPERATION_RESULT hRes = OPERATION_RESULT.DDM_NO_ERROR_CONDITION;
 
             if (args.Length == 0)
             {
@@ -47,7 +49,10 @@ namespace ManagerTestNet
                     },
                     DCPSInfoRepo = new OpenDDSConfiguration.DCPSInfoRepoConfiguration()
                     {
-                        Autostart = true,
+                        Autostart = direction.HasFlag(DDM_CHANNEL_DIRECTION.RECEIVER), // start only on receiver
+                        Monitor = true,
+                        Resurrect = true,
+                        PersistenceFile = "persistance.file",
                         ORBEndpoint = "iiop://localhost:12345",
                     },
                     DomainParticipantQos = new DomainParticipantQosConfiguration()
@@ -120,16 +125,21 @@ namespace ManagerTestNet
             uint counter = 100;
             int pid = Process.GetCurrentProcess().Id;
             var str = string.Format("{0:10}", pid);
-            DDM_CHANNEL_DIRECTION direction = DDM_CHANNEL_DIRECTION.TRANSMITTER;
-            Console.WriteLine("Starting sending...\n");
+
+            Console.WriteLine("Starting operations...\n");
             while (true)
             {
-                if (direction.HasFlag(DDM_CHANNEL_DIRECTION.TRANSMITTER) ? testChannel.WriteOnChannel(null, str) : true)
+                if (direction.HasFlag(DDM_CHANNEL_DIRECTION.TRANSMITTER))
                 {
-                    str = string.Format("{0:10}", counter++);
-                    if ((counter % THRESHOLD) == 0)
+                    if (testChannel.WriteOnChannel(str).Succeeded)
                     {
-                        Console.WriteLine("SendData Reached {0}", counter);
+                        str = string.Format("{0:10}", counter++);
+                        if ((counter % THRESHOLD) == 0)
+                        {
+                            string key = string.Format("SendData Reached {0}", counter);
+                            testChannel.WriteOnChannel(key, str);
+                            Console.WriteLine(key);
+                        }
                     }
                 }
                 Thread.Sleep(1000);

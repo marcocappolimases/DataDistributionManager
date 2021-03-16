@@ -25,6 +25,16 @@
 
 #include "DataDistributionManagerCommon.h"
 
+typedef enum class DDM_KEEPALIVE_TYPE
+{
+	ALIVE = 0x1,
+	HELLO = 0x2,
+	WELCOME = 0x4,
+	GOODBYE = 0x8,
+	STATECHANGEREQUEST = 0x10,
+	STATECHANGERESPONSE = 0x20,
+} DDM_KEEPALIVE_TYPE;
+
 struct BaseKeepAlive
 {
 	int MessageLength;
@@ -41,21 +51,23 @@ struct BaseKeepAlive
 
 struct HELLO_WELCOME : BaseKeepAlive
 {
+#define NAME_LENGTH_MAX 256
+
 	int64_t Uptime;
-	char ServerName[256];
-	char HostName[256];
+	char ServerName[NAME_LENGTH_MAX];
+	char HostName[NAME_LENGTH_MAX];
 	HELLO_WELCOME(DDM_KEEPALIVE_TYPE type, size_t serverId, const char* serverName, const char* hostname) : BaseKeepAlive(type, serverId)
 	{
 		MessageLength = sizeof(HELLO_WELCOME);
-		memset(ServerName, 0, 256);
-		memset(HostName, 0, 256);
+		memset(ServerName, 0, NAME_LENGTH_MAX);
+		memset(HostName, 0, NAME_LENGTH_MAX);
 		if (serverName)
 		{
-			strncpy(ServerName, serverName, min(256, strlen(serverName)));
+			snprintf(ServerName, NAME_LENGTH_MAX, "%s", serverName);
 		}
 		if (hostname)
 		{
-			strncpy(HostName, hostname, min(256, strlen(hostname)));
+			snprintf(HostName, NAME_LENGTH_MAX, "%s", hostname);
 		}
 	}
 };
@@ -102,18 +114,18 @@ struct STATECHANGERESPONSE : BaseKeepAlive
 	}
 };
 
-class __declspec(dllexport) DataDistributionMastershipCommon : public IDataDistributionMastershipCommon, protected IDataDistributionChannelCallback, protected IDataDistributionLog
+class DDM_EXPORT DataDistributionMastershipCommon : public IDataDistributionMastershipCommon, protected IDataDistributionChannelCallback, protected IDataDistributionLog
 {
 public:
 	DataDistributionMastershipCommon();
 	virtual ~DataDistributionMastershipCommon() {}
-	HRESULT Initialize(IDataDistributionSubsystem* transportManager, IDataDistributionMastershipCallback* cbs, const char* szMyAddress = NULL, const char* arrayParams[] = NULL, int len = 0);
-	virtual HRESULT Initialize();
-	virtual HRESULT Start(DWORD dwMilliseconds);
-	virtual HRESULT Stop(DWORD dwMilliseconds);
+	OPERATION_RESULT Initialize(IDataDistributionSubsystem* transportManager, IDataDistributionMastershipCallback* cbs, const char* szMyAddress = NULL, const char* arrayParams[] = NULL, int len = 0);
+	virtual OPERATION_RESULT Initialize();
+	virtual OPERATION_RESULT Start(unsigned long dwMilliseconds);
+	virtual OPERATION_RESULT Stop(unsigned long dwMilliseconds);
 	virtual BOOL GetIamNextPrimary();
 	virtual BOOL RequestIAmNextPrimary();
-	virtual void GetClusterIndexes(int64_t arraElements[], size_t* length) = 0;
+	virtual int64_t* GetClusterIndexes(size_t* length) = 0;
 	virtual DDM_INSTANCE_STATE GetStateOf(int64_t serverId) = 0;
 	virtual ClusterHealth GetClusterHealth() = 0;
 	virtual DDM_INSTANCE_STATE GetMyState();
@@ -131,8 +143,8 @@ protected:
 	void AddRandomToMyTime();
 
 	virtual int SendKeepAlive();
-	virtual void OnUnderlyingEvent(const HANDLE channelHandle, const UnderlyingEventData* uEvent);
-	virtual void OnCondition(const char* channelName, DDM_UNDERLYING_ERROR_CONDITION condition, int nativeCode, const char* subSystemReason);
+	virtual void OnUnderlyingEvent(const CHANNEL_HANDLE_PARAMETER, const UnderlyingEventData* uEvent);
+	virtual void OnCondition(const char* channelName, OPERATION_RESULT condition, int nativeCode, const char* subSystemReason);
 	virtual void OnALIVE(ALIVE* pALIVE);
 	virtual void OnHELLO(HELLO_WELCOME* pHELLO_WELCOME);
 	virtual void OnWELCOME(HELLO_WELCOME* pHELLO_WELCOME);
@@ -150,15 +162,14 @@ protected:
 	long long m_PrimaryKeepAliveDelay;
 	int64_t m_PrimaryIdentifier;
 	int64_t m_MyIdentifier;
-	HANDLE m_hKeepAlive;
+	CHANNEL_HANDLE m_hKeepAlive;
 	int m_keepAliveInterval;
 private:
-	HANDLE  h_evtKeepAlive;
-	BOOL	bKeepAliveRun;
-	DWORD	dwKeepAliveThrId;
-	HANDLE	hKeepAliveThread;
-	static DWORD __stdcall keepAliveHandler(void * argh);
-	CRITICAL_SECTION m_csState;
+	DataDistributionThreadWrapper* m_tKeepAlive;
+
+	static void FUNCALL keepAliveHandler(ThreadWrapperArg *arg);
+
+	DataDistributionLockWrapper* m_csState;
 	SmartTimeMeasureWrapper m_startupTime;
 	BOOL m_bSystemRunning;
 };

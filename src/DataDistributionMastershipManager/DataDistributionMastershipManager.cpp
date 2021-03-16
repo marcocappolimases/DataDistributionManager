@@ -18,47 +18,48 @@
 
 #include "DataDistributionMastershipManager.h"
 
-extern "C" __declspec(dllexport) void* CreateObjectImplementation()
+extern "C" DDM_EXPORT void* CreateObjectImplementation()
 {
 	return static_cast<void*> (new DataDistributionMastershipManager);
 }
 
 DataDistributionMastershipManager::DataDistributionMastershipManager() : DataDistributionMastershipCommon()
 {
-
+	m_csFlags = new DataDistributionLockWrapper();
 }
 
 DataDistributionMastershipManager::~DataDistributionMastershipManager()
 {
+	delete m_csFlags;
 }
 
-void DataDistributionMastershipManager::GetClusterIndexes(int64_t arraElements[], size_t* length)
+int64_t* DataDistributionMastershipManager::GetClusterIndexes(size_t* length)
 {
+	DataDistributionAutoLockWrapper lock(m_csFlags);
+
 	ClusterHealthIterator it;
 
-	EnterCriticalSection(&m_csFlags);
 	*length = clusterState.size();
-	*arraElements = (int64_t)malloc(sizeof(int64_t) * (*length));
+	int64_t* arraElements = (int64_t*)malloc(sizeof(int64_t) * (*length));
 	size_t counter = 0;
 	for (it = clusterState.begin(); it != clusterState.end(); ++it)
 	{
 		arraElements[counter] = it->first;
 		counter++;
 	}
-	LeaveCriticalSection(&m_csFlags);
+	return arraElements;
 }
 
 DDM_INSTANCE_STATE DataDistributionMastershipManager::GetStateOf(int64_t serverId)
 {
+	DataDistributionAutoLockWrapper lock(m_csFlags);
 	DDM_INSTANCE_STATE state = DDM_INSTANCE_STATE::UNKNOWN;
 	ClusterHealthIterator it;
-	EnterCriticalSection(&m_csFlags);
 	auto elem = clusterState.at(serverId);
 	if (elem != NULL)
 	{
 		state = elem->Status;
 	}
-	LeaveCriticalSection(&m_csFlags);
 
 	return state;
 }

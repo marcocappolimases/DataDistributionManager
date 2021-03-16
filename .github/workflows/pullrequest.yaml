@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI_RELEASE
+name: CI_PULLREQUEST
 
 # Controls when the action will run. Triggers the workflow on pull request
 # events but only for the master branch
@@ -10,7 +10,7 @@ on:
 
 jobs:
   # This workflow contains a single job called "build_release"
-  build_release:
+  build_pullrequest:
     # The type of runner that the job will run on
     runs-on: windows-2019
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -43,14 +43,14 @@ jobs:
         shell: cmd
         run: |
           cd third_party\CommonTools\Output
-          VersionGenerator %GITHUB_WORKSPACE%\ProductInformation\Version.cs %GITHUB_WORKSPACE%\ProductInformation ${{ env.GITHUB_COMMIT_MESSAGE }}
+          VersionGenerator %GITHUB_WORKSPACE%\src\ProductInformation\Version.cs %GITHUB_WORKSPACE%\src\ProductInformation ${{ env.GITHUB_COMMIT_MESSAGE }}
         env:
           GITHUB_WORKSPACE: $GITHUB_WORKSPACE
 
       - name: Prepare nuget
         shell: cmd
         run: |
-          third_party\CommonTools\Output\PlaceHolderReplacer.exe .\ProductInformation\Version.cs .\packaging\nuget\datadistributionmanager.nuspec >> .\nuget_version.txt
+          third_party\CommonTools\Output\PlaceHolderReplacer.exe .\src\ProductInformation\Version.cs .\packaging\nuget\datadistributionmanager.nuspec >> .\nuget_version.txt
 
       - name: Store version
         run: |
@@ -162,8 +162,9 @@ jobs:
           New-Item -Path .\OutputPackage\pdb\x64 -ItemType directory
           New-Item -Path .\OutputPackage\include -ItemType directory
           New-Item -Path .\OutputPackage\licenses -ItemType directory
-          Copy-Item .\src\DataDistributionManager\DataDistributionManager.h .\OutputPackage\include\DataDistributionManager.h
           Copy-Item .\src\DataDistributionManager\DataDistributionManagerEnums.h .\OutputPackage\include\DataDistributionManagerEnums.h
+          Copy-Item .\src\DataDistributionManager\DataDistributionManagerTypes.h .\OutputPackage\include\DataDistributionManagerTypes.h          
+          Copy-Item .\src\DataDistributionManager\DataDistributionManager.h .\OutputPackage\include\DataDistributionManager.h
           Copy-Item .\src\DataDistributionManager\SmartDataDistributionManager.h .\OutputPackage\include\SmartDataDistributionManager.h
           Copy-Item .\Output\x86\DataDistributionManager.lib .\OutputPackage\lib\x86\DataDistributionManager.lib -Force
           Copy-Item .\Output\x64\DataDistributionManager.lib .\OutputPackage\lib\x64\DataDistributionManager.lib -Force

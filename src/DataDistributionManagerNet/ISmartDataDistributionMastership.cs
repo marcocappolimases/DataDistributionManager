@@ -22,6 +22,7 @@ using System.Collections.Generic;
 
 namespace MASES.DataDistributionManager.Bindings
 {
+    #region ISmartDataDistributionMastership
     /// <summary>
     /// Interface to manage underlying mastersip manager
     /// </summary>
@@ -31,14 +32,14 @@ namespace MASES.DataDistributionManager.Bindings
         /// Starts the manager
         /// </summary>
         /// <param name="dwMilliseconds">Timeout in ms</param>
-        /// <returns><see cref="HRESULT"/></returns>
-        HRESULT Start(uint dwMilliseconds);
+        /// <returns><see cref="OPERATION_RESULT"/></returns>
+        OPERATION_RESULT Start(uint dwMilliseconds);
         /// <summary>
         /// Stops the manager
         /// </summary>
         /// <param name="dwMilliseconds">Timeout in ms</param>
-        /// <returns><see cref="HRESULT"/></returns>
-        HRESULT Stop(uint dwMilliseconds);
+        /// <returns><see cref="OPERATION_RESULT"/></returns>
+        OPERATION_RESULT Stop(uint dwMilliseconds);
         /// <summary>
         /// Change the state of this instance
         /// </summary>
@@ -51,9 +52,9 @@ namespace MASES.DataDistributionManager.Bindings
         /// <param name="newState">Expected <see cref="DDM_INSTANCE_STATE"/></param>
         void ChangeState(Int64 instanceId, DDM_INSTANCE_STATE newState);
         /// <summary>
-        /// Check if this is the next primary server
+        /// Request to be the next primary server
         /// </summary>
-        /// <returns>True if this server is the next primary</returns>
+        /// <returns>True in case of success</returns>
         bool RequestIAmNextPrimary();
         /// <summary>
         /// Verify if this server will be elected as next primary
@@ -89,4 +90,5 @@ namespace MASES.DataDistributionManager.Bindings
         /// </summary>
         Int64 UpTime { get; }
     }
+    #endregion
 }

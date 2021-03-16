@@ -50,7 +50,7 @@ namespace ManagerTestNet
             Console.WriteLine("Received data from {0} with key {1} and buffer {2}", channelName, key, str);
         }
 
-        public override void OnConditionOrError(string channelName, DDM_UNDERLYING_ERROR_CONDITION errorCode, int nativeCode, string subSystemReason)
+        public override void OnConditionOrError(string channelName, OPERATION_RESULT errorCode, int nativeCode, string subSystemReason)
         {
             base.OnConditionOrError(channelName, errorCode, nativeCode, subSystemReason);
         }
@@ -63,9 +63,11 @@ namespace ManagerTestNet
 
         static void Main(string[] args)
         {
+            DDM_CHANNEL_DIRECTION direction = DDM_CHANNEL_DIRECTION.TRANSMITTER;
+
             MySmartDataDistribution dataDistribution = new MySmartDataDistribution();
             OpenDDSConfiguration conf = null;
-            HRESULT hRes = HRESULT.S_OK;
+            OPERATION_RESULT hRes = OPERATION_RESULT.DDM_NO_ERROR_CONDITION;
 
             if (args.Length == 0)
             {
@@ -78,7 +80,10 @@ namespace ManagerTestNet
                     },
                     DCPSInfoRepo = new OpenDDSConfiguration.DCPSInfoRepoConfiguration()
                     {
-                        Autostart = true,
+                        Autostart = direction.HasFlag(DDM_CHANNEL_DIRECTION.RECEIVER),
+                        Monitor = true,
+                        Resurrect = true,
+                        PersistenceFile = "persistance.file",
                         ORBEndpoint = "iiop://localhost:12345",
                     },
                     DomainParticipantQos = new DomainParticipantQosConfiguration()
@@ -149,25 +154,23 @@ namespace ManagerTestNet
             uint counter = 100;
             int pid = Process.GetCurrentProcess().Id;
             var str = string.Format("{0:10}", pid);
-            DDM_CHANNEL_DIRECTION direction = DDM_CHANNEL_DIRECTION.TRANSMITTER;
-            Console.WriteLine("Starting sending...\n");
+
+            Console.WriteLine("Starting operations...\n");
             while (true)
             {
-                if (direction.HasFlag(DDM_CHANNEL_DIRECTION.TRANSMITTER) ? testChannel.WriteOnChannel(null, str) : true)
+                if (direction.HasFlag(DDM_CHANNEL_DIRECTION.TRANSMITTER))
                 {
-                    str = string.Format("{0:10}", counter++);
-                    if ((counter % THRESHOLD) == 0)
+                    if (testChannel.WriteOnChannel(null, str).Succeeded)
                     {
-                        Console.WriteLine("SendData Reached {0}", counter);
+                        str = string.Format("{0:10}", counter++);
+                        if ((counter % THRESHOLD) == 0)
+                        {
+                            Console.WriteLine("SendData Reached {0}", counter);
+                        }
                     }
                 }
                 Thread.Sleep(1000);
             }
-        }
-
-        private static void DataDistribution_Logging(object sender, LoggingEventArgs e)
-        {
-            throw new NotImplementedException();
         }
     }
 }

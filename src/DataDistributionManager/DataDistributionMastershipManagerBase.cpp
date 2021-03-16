@@ -20,12 +20,12 @@
 
 DataDistributionMastershipManagerBase::DataDistributionMastershipManagerBase()
 {
-	InitializeCriticalSection(&m_csFlags);
+	m_csFlags = new DataDistributionLockWrapper;
 }
 
 DataDistributionMastershipManagerBase::~DataDistributionMastershipManagerBase()
 {
-
+	delete m_csFlags;
 }
 
 void DataDistributionMastershipManagerBase::OnALIVE(ALIVE* pALIVE)
@@ -48,17 +48,18 @@ void DataDistributionMastershipManagerBase::OnALIVE(ALIVE* pALIVE)
 	else
 	{
 		ClusterHealthElement* data = new ClusterHealthElement();
+		data->ServerId = pALIVE->ServerId;
 		data->Status = pALIVE->Status;
 		data->Uptime = pALIVE->Uptime;
 		data->LastContactTime = GetUpTime();
-		clusterState.insert(std::pair<int64_t, ClusterHealthElement*>(pALIVE->ServerId, data));
+		clusterState.insert(std::pair<int64_t, ClusterHealthElement*>(data->ServerId, data));
 		m_pMastershipCallback->OnClusterStateChange(DDM_CLUSTEREVENT::ADDSERVER, pALIVE->ServerId);
 	}
 	bool addRandomTime = false;
 	long long myTime = GetUpTime();
 
 	ClusterHealthIterator it;
-	EnterCriticalSection(&m_csFlags);
+	DataDistributionAutoLockWrapper lock(m_csFlags);
 	m_IamNextPrimary = TRUE;
 	std::list<int64_t> listToRemove;
 	for (it = clusterState.begin(); it != clusterState.end(); ++it)
@@ -88,7 +89,6 @@ void DataDistributionMastershipManagerBase::OnALIVE(ALIVE* pALIVE)
 		Log(DDM_LOG_LEVEL::INFO_LEVEL, "DataDistributionMastershipManagerBase", "OnALIVE", "Adding random time to my time");
 		AddRandomToMyTime();
 	}
-	LeaveCriticalSection(&m_csFlags);
 }
 
 void DataDistributionMastershipManagerBase::OnHELLO_WELCOME(HELLO_WELCOME* pHELLO_WELCOME)
@@ -135,33 +135,34 @@ void DataDistributionMastershipManagerBase::OnSTATECHANGERESPONSE(STATECHANGERES
 
 }
 
-void DataDistributionMastershipManagerBase::GetClusterIndexes(int64_t arraElements[], size_t* length)
+int64_t* DataDistributionMastershipManagerBase::GetClusterIndexes(size_t* length)
 {
+	DataDistributionAutoLockWrapper lock(m_csFlags);
+
 	ClusterHealthIterator it;
 
-	EnterCriticalSection(&m_csFlags);
 	*length = clusterState.size();
-	*arraElements = (int64_t)malloc(sizeof(int64_t) * (*length));
+	int64_t* arraElements = (int64_t*)malloc(sizeof(int64_t) * (*length));
 	size_t counter = 0;
 	for (it = clusterState.begin(); it != clusterState.end(); ++it)
 	{
 		arraElements[counter] = it->first;
 		counter++;
 	}
-	LeaveCriticalSection(&m_csFlags);
+	return arraElements;
 }
 
 DDM_INSTANCE_STATE DataDistributionMastershipManagerBase::GetStateOf(int64_t serverId)
 {
+	DataDistributionAutoLockWrapper lock(m_csFlags);
+
 	DDM_INSTANCE_STATE state = DDM_INSTANCE_STATE::UNKNOWN;
 	ClusterHealthIterator it;
-	EnterCriticalSection(&m_csFlags);
 	auto elem = clusterState.at(serverId);
 	if (elem != NULL)
 	{
 		state = elem->Status;
 	}
-	LeaveCriticalSection(&m_csFlags);
 
 	return state;
 }

@@ -31,10 +31,15 @@ namespace MASES.DataDistributionManager.Bindings
     {
         internal ClusterHealthElement(ClusterHealthElementStruct s)
         {
+            this.ServerId = s.ServerId;
             this.Status = s.Status;
             this.Uptime = s.Uptime;
             this.LastContactTime = s.LastContactTime;
         }
+        /// <summary>
+        /// Instance status
+        /// </summary>
+        public Int64 ServerId { get; private set; }
         /// <summary>
         /// Instance status
         /// </summary>
@@ -320,31 +325,31 @@ namespace MASES.DataDistributionManager.Bindings
         /// <param name="conf_file">Configuration file to use</param>
         /// <param name="szMyAddress">The name of the server hosting the process</param>
         /// <param name="channelTrailer">Trailer string to append on channel names</param>
-        /// <returns><see cref="HRESULT"/></returns>
-        HRESULT Initialize(string conf_file, string szMyAddress = null, string channelTrailer = null);
+        /// <returns><see cref="OPERATION_RESULT"/></returns>
+        OPERATION_RESULT Initialize(string conf_file, string szMyAddress = null, string channelTrailer = null);
         /// <summary>
         /// Initialize the instance using a configuration instance
         /// </summary>
         /// <param name="configuration">The configuration coming from an instance of <see cref="IConfiguration"/> </param>
         /// <param name="szMyAddress">The name of the server hosting the process</param>
         /// <param name="channelTrailer">Trailer string to append on channel names</param>
-        /// <returns><see cref="HRESULT"/></returns>
-        HRESULT Initialize(IConfiguration configuration, string szMyAddress = null, string channelTrailer = null);
+        /// <returns><see cref="OPERATION_RESULT"/></returns>
+        OPERATION_RESULT Initialize(IConfiguration configuration, string szMyAddress = null, string channelTrailer = null);
         /// <summary>
         /// Initialize the instance using a set of key=value pairs
         /// </summary>
         /// <param name="arrayParams">array of key=value parameters</param>
         /// <param name="szMyAddress">The name of the server hosting the process</param>
         /// <param name="channelTrailer">Trailer string to append on channel names</param>
-        /// <returns><see cref="HRESULT"/></returns>
-        HRESULT Initialize(string[] arrayParams, string szMyAddress = null, string channelTrailer = null);
+        /// <returns><see cref="OPERATION_RESULT"/></returns>
+        OPERATION_RESULT Initialize(string[] arrayParams, string szMyAddress = null, string channelTrailer = null);
         /// <summary>
         /// Request to allocate mastership manager
         /// </summary>
         /// <param name="serverName">The server name</param>
         /// <param name="parameters">Paramaters to send to underlying layer</param>
-        /// <returns><see cref="HRESULT"/></returns>
-        HRESULT RequestMastershipManager(string serverName, string[] parameters);
+        /// <returns><see cref="OPERATION_RESULT"/></returns>
+        OPERATION_RESULT RequestMastershipManager(string serverName, string[] parameters);
         /// <summary>
         /// Returns <see cref="ISmartDataDistributionMastership"/> reference
         /// </summary>
@@ -353,14 +358,14 @@ namespace MASES.DataDistributionManager.Bindings
         /// Starts the manager
         /// </summary>
         /// <param name="timeout">Timeout in ms</param>
-        /// <returns><see cref="HRESULT"/></returns>
-        HRESULT Start(uint timeout);
+        /// <returns><see cref="OPERATION_RESULT"/></returns>
+        OPERATION_RESULT Start(uint timeout);
         /// <summary>
         /// Stops the manager
         /// </summary>
         /// <param name="timeout">Timeout in ms</param>
-        /// <returns><see cref="HRESULT"/></returns>
-        HRESULT Stop(uint timeout);
+        /// <returns><see cref="OPERATION_RESULT"/></returns>
+        OPERATION_RESULT Stop(uint timeout);
         /// <summary>
         /// Return the protocol in use
         /// </summary>
@@ -569,11 +574,11 @@ namespace MASES.DataDistributionManager.Bindings
 
         }
         /// <inheritdoc/>
-        public HRESULT Initialize(string conf_file, string szMyAddress = null, string channelTrailer = null)
+        public OPERATION_RESULT Initialize(string conf_file, string szMyAddress = null, string channelTrailer = null)
         {
             m_DataDistributionCallbackLow = new DataDistributionCallbackLow(IDataDistribution_ptr, this);
 
-            HRESULT result = DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistribution_Initialize>().Invoke(
+            OPERATION_RESULT result = DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistribution_Initialize>().Invoke(
                 IDataDistribution_ptr, m_DataDistributionCallbackLow.Pointer,
                 conf_file, szMyAddress, channelTrailer);
 
@@ -581,16 +586,16 @@ namespace MASES.DataDistributionManager.Bindings
             return result;
         }
         /// <inheritdoc/>
-        public HRESULT Initialize(IConfiguration configuration, string szMyAddress = null, string channelTrailer = null)
+        public OPERATION_RESULT Initialize(IConfiguration configuration, string szMyAddress = null, string channelTrailer = null)
         {
             return Initialize(configuration.Configuration, szMyAddress, channelTrailer);
         }
         /// <inheritdoc/>
-        public HRESULT Initialize(string[] arrayParams, string szMyAddress = null, string channelTrailer = null)
+        public OPERATION_RESULT Initialize(string[] arrayParams, string szMyAddress = null, string channelTrailer = null)
         {
             m_DataDistributionCallbackLow = new DataDistributionCallbackLow(IDataDistribution_ptr, this);
 
-            HRESULT result = DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistribution_Initialize2>().Invoke(
+            OPERATION_RESULT result = DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistribution_Initialize2>().Invoke(
                 IDataDistribution_ptr, m_DataDistributionCallbackLow.Pointer,
                 arrayParams, arrayParams.Length, szMyAddress, channelTrailer);
 
@@ -598,7 +603,7 @@ namespace MASES.DataDistributionManager.Bindings
             return result;
         }
         /// <inheritdoc/>
-        public HRESULT RequestMastershipManager(string serverName, string[] parameters)
+        public OPERATION_RESULT RequestMastershipManager(string serverName, string[] parameters)
         {
             m_DataDistributionMastershipCallbackLow = new DataDistributionMastershipCallbackLow(IDataDistribution_ptr, this);
 
@@ -608,12 +613,12 @@ namespace MASES.DataDistributionManager.Bindings
         /// <inheritdoc/>
         public ISmartDataDistributionMastership MastershipManager { get { return this; } }
         /// <inheritdoc/>
-        public HRESULT Start(uint timeout)
+        public OPERATION_RESULT Start(uint timeout)
         {
             return DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistributionSubsystem_Start>().Invoke(IDataDistributionSubsystemManager_ptr, timeout);
         }
         /// <inheritdoc/>
-        public HRESULT Stop(uint timeout)
+        public OPERATION_RESULT Stop(uint timeout)
         {
             return DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistributionSubsystem_Stop>().Invoke(IDataDistributionSubsystemManager_ptr, timeout);
         }
@@ -761,7 +766,7 @@ namespace MASES.DataDistributionManager.Bindings
             OnClusterStateChange(change, serverid);
             ClusterStateChangeEvent?.Invoke(this, new ClusterStateChangeEventArgs(change, serverid));
         }
- 
+
         void IDataDistributionMastershipCallbackLow.OnStateChange(IntPtr IDataDistribution_nativePtr, DDM_INSTANCE_STATE newState, DDM_INSTANCE_STATE oldState)
         {
             OnStateChange(newState, oldState);
@@ -914,12 +919,12 @@ namespace MASES.DataDistributionManager.Bindings
 
         #region ISmartDataDistributionMastership
 
-        HRESULT ISmartDataDistributionMastership.Start(uint dwMilliseconds)
+        OPERATION_RESULT ISmartDataDistributionMastership.Start(uint dwMilliseconds)
         {
             return DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistributionMastershipCommon_Start>().Invoke(IDataDistribution_ptr, dwMilliseconds);
         }
 
-        HRESULT ISmartDataDistributionMastership.Stop(uint dwMilliseconds)
+        OPERATION_RESULT ISmartDataDistributionMastership.Stop(uint dwMilliseconds)
         {
             return DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistributionMastershipCommon_Stop>().Invoke(IDataDistribution_ptr, dwMilliseconds);
         }
@@ -953,10 +958,9 @@ namespace MASES.DataDistributionManager.Bindings
             {
                 IDictionary<Int64, DDM_INSTANCE_STATE> result = new Dictionary<Int64, DDM_INSTANCE_STATE>();
 
-                Int64[] arrayElements = null;
                 IntPtr length = IntPtr.Zero;
 
-                DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistributionMastershipCommon_GetClusterIndexes>().Invoke(IDataDistribution_ptr, arrayElements, length);
+                Int64[] arrayElements = DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistributionMastershipCommon_GetClusterIndexes>().Invoke(IDataDistribution_ptr, length);
 
                 if (length != IntPtr.Zero && arrayElements != null)
                 {
@@ -977,10 +981,9 @@ namespace MASES.DataDistributionManager.Bindings
             {
                 IDictionary<Int64, ClusterHealthElement> result = new Dictionary<Int64, ClusterHealthElement>();
 
-                Int64[] arrayElements = null;
                 IntPtr length = IntPtr.Zero;
 
-                DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistributionMastershipCommon_GetClusterIndexes>().Invoke(IDataDistribution_ptr, arrayElements, length);
+                Int64[] arrayElements = DataDistributionManagerInvokeWrapper.DataDistributionEnv.GetDelegate<IDataDistributionMastershipCommon_GetClusterIndexes>().Invoke(IDataDistribution_ptr, length);
 
                 if (length != IntPtr.Zero && arrayElements != null)
                 {

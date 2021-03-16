@@ -98,7 +98,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DDM_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <AdditionalIncludeDirectories>..\DataDistributionManager</AdditionalIncludeDirectories>
@@ -112,7 +112,7 @@
       <ProgramDatabaseFile>$(OutDir)..\pdb32\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ProductInformation</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -121,7 +121,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DDM_EXPORTS;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\DataDistributionManager</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -132,7 +132,7 @@
       <ProgramDatabaseFile>$(OutDir)..\pdb64\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ProductInformation</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -143,7 +143,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DDM_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\DataDistributionManager</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -156,7 +156,7 @@
       <ProgramDatabaseFile>$(OutDir)..\pdb32\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ProductInformation</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -167,7 +167,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DDM_EXPORTS;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\DataDistributionManager</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -180,7 +180,7 @@
       <ProgramDatabaseFile>$(OutDir)..\pdb64\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ProductInformation</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

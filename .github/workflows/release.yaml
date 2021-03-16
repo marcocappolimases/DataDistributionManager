@@ -45,14 +45,14 @@ jobs:
         shell: cmd
         run: |
           cd third_party\CommonTools\Output
-          VersionGenerator %GITHUB_WORKSPACE%\ProductInformation\Version.cs %GITHUB_WORKSPACE%\ProductInformation ${{ env.GITHUB_COMMIT_MESSAGE }}
+          VersionGenerator %GITHUB_WORKSPACE%\src\ProductInformation\Version.cs %GITHUB_WORKSPACE%\src\ProductInformation ${{ env.GITHUB_COMMIT_MESSAGE }}
         env:
           GITHUB_WORKSPACE: $GITHUB_WORKSPACE
 
       - name: Prepare nuget
         shell: cmd
         run: |
-          third_party\CommonTools\Output\PlaceHolderReplacer.exe .\ProductInformation\Version.cs .\packaging\nuget\datadistributionmanager.nuspec >> .\nuget_version.txt
+          third_party\CommonTools\Output\PlaceHolderReplacer.exe .\src\ProductInformation\Version.cs .\packaging\nuget\datadistributionmanager.nuspec >> .\nuget_version.txt
 
       - name: Store version
         run: |
@@ -164,8 +164,9 @@ jobs:
           New-Item -Path .\OutputPackage\pdb\x64 -ItemType directory
           New-Item -Path .\OutputPackage\include -ItemType directory
           New-Item -Path .\OutputPackage\licenses -ItemType directory
-          Copy-Item .\src\DataDistributionManager\DataDistributionManager.h .\OutputPackage\include\DataDistributionManager.h
           Copy-Item .\src\DataDistributionManager\DataDistributionManagerEnums.h .\OutputPackage\include\DataDistributionManagerEnums.h
+          Copy-Item .\src\DataDistributionManager\DataDistributionManagerTypes.h .\OutputPackage\include\DataDistributionManagerTypes.h          
+          Copy-Item .\src\DataDistributionManager\DataDistributionManager.h .\OutputPackage\include\DataDistributionManager.h
           Copy-Item .\src\DataDistributionManager\SmartDataDistributionManager.h .\OutputPackage\include\SmartDataDistributionManager.h
           Copy-Item .\Output\x86\DataDistributionManager.lib .\OutputPackage\lib\x86\DataDistributionManager.lib -Force
           Copy-Item .\Output\x64\DataDistributionManager.lib .\OutputPackage\lib\x64\DataDistributionManager.lib -Force
@@ -202,6 +203,9 @@ jobs:
           set JDK_ROOT_FOLDER=C:\Program Files\Java\jdk-13.0.2+8
           CreateJar.bat
           cd ..\..
+
+      - name: Prepare for Docs packaging
+        run: Compress-Archive -Path .\docs\* -DestinationPath .\Documentation.zip
 
       - uses: nuget/setup-nuget@v1
         with:
@@ -241,6 +245,15 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: .\Output\datadistributionmanager.docs.jar
           asset_name: datadistributionmanager.docs.jar
+          tag: ${{ github.ref }}
+          overwrite: true
+          
+      - name: Upload DataDistributionManager Docs snapshot to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: .\Documentation.zip
+          asset_name: Documentation.zip
           tag: ${{ github.ref }}
           overwrite: true
 

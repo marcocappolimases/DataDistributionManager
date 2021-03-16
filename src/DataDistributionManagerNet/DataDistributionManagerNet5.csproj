@@ -9,13 +9,15 @@
     <LangVersion>6</LangVersion>
     <AssemblyName>DataDistributionManagerNet</AssemblyName>
     <PackageId>DataDistributionManagerNet</PackageId>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>DataDistributionManagerNet.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\ProductInformation\Version.cs">
+    <Compile Include="..\ProductInformation\Version.cs">
       <Link>Properties\Version.cs</Link>
     </Compile>
-    <Compile Include="..\..\ProductInformation\ComponentVersion.cs">
+    <Compile Include="..\ProductInformation\ComponentVersion.cs">
       <Link>Properties\ComponentVersion.c</Link>
     </Compile>
     <Compile Include="BaseConfiguration.cs" />

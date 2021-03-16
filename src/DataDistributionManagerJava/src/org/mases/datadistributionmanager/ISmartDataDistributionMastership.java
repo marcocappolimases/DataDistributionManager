@@ -28,17 +28,17 @@ public interface ISmartDataDistributionMastership {
      * Starts the manager
      * 
      * @param dwMilliseconds Timeout in ms
-     * @return {@link HRESULT}
+     * @return {@link OPERATION_RESULT}
      */
-    HRESULT Start(int dwMilliseconds);
+    OPERATION_RESULT Start(int dwMilliseconds);
 
     /**
      * Stops the manager
      * 
      * @param dwMilliseconds Timeout in ms
-     * @return {@link HRESULT}
+     * @return {@link OPERATION_RESULT}
      */
-    HRESULT Stop(int dwMilliseconds);
+    OPERATION_RESULT Stop(int dwMilliseconds);
 
     /**
      * Change the state of this instance
@@ -56,9 +56,9 @@ public interface ISmartDataDistributionMastership {
     void ChangeState(long instanceId, DDM_INSTANCE_STATE newState);
 
     /**
-     * Check if this is the next primary server
+     * Request to be the next primary server
      * 
-     * @return True if this server is the next primary
+     * @return True in case of success
      */
     boolean RequestIAmNextPrimary();
 

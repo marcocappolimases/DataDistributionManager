@@ -33,6 +33,12 @@
     <DocumentationFile>..\..\Output\DataDistributionManagerNet.XML</DocumentationFile>
     <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>DataDistributionManagerNet.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -44,10 +50,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\ProductInformation\Version.cs">
+    <Compile Include="..\ProductInformation\Version.cs">
       <Link>Properties\Version.cs</Link>
     </Compile>
-    <Compile Include="..\..\ProductInformation\ComponentVersion.cs">
+    <Compile Include="..\ProductInformation\ComponentVersion.cs">
       <Link>Properties\ComponentVersion.c</Link>
     </Compile>
     <Compile Include="BaseConfiguration.cs" />
@@ -71,6 +77,9 @@
     <Compile Include="Interop\Delegates.cs" />
     <Compile Include="Interop\Enums.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DataDistributionManagerNet.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

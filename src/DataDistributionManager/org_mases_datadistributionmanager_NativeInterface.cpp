@@ -240,7 +240,7 @@ struct DataDistributionChannelCallbackContainer
 	IDataDistributionChannelCallback* pcb;
 };
 
-void dataDistributionUnderlyingEventCbJava(const void* opaque, const HANDLE channelHandle, const UnderlyingEventData* uEvent)
+void dataDistributionUnderlyingEventCbJava(const void* opaque, const CHANNEL_HANDLE_PARAMETER, const UnderlyingEventData* uEvent)
 {
 	BOOL attached;
 	JNIEnv* env = NewEnv("UnderlyingEvent", &attached);
@@ -527,7 +527,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 		env->ReleaseStringUTFChars(jChannelTrailer, pjStr);
 	}
 
-	HRESULT result = pIDataDistribution->Initialize(pDataDistributionCallbackContainer->pcb,
+	OPERATION_RESULT result = pIDataDistribution->Initialize(pDataDistributionCallbackContainer->pcb,
 		(conf_file != NULL) ? _strdup(conf_file) : NULL,
 		(szMyAddress != NULL) ? _strdup(szMyAddress) : NULL,
 		(channelTrailer != NULL) ? _strdup(channelTrailer) : NULL);
@@ -551,19 +551,30 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 	const char* szMyAddress = NULL;
 	const char* channelTrailer = NULL;
 
-	int size = env->GetArrayLength(jarrayParams);
+	int size = 0;
+	const char **array = NULL;
 
-	const char **array = (const char**)malloc(size * sizeof(const char *));
-
-	for (int i = 0; i < size; ++i)
+	if (jarrayParams != NULL)
 	{
-		jstring string = (jstring)env->GetObjectArrayElement(jarrayParams, i);
-		const char* myarray = env->GetStringUTFChars(string, 0);
+		size = env->GetArrayLength(jarrayParams);
 
-		array[i] = _strdup(myarray);
+		array = (const char**)malloc(size * sizeof(const char *));
 
-		env->ReleaseStringUTFChars(string, myarray);
-		env->DeleteLocalRef(string);
+		for (int i = 0; i < size; ++i)
+		{
+			const char* myarray = NULL;
+
+			jstring string = (jstring)env->GetObjectArrayElement(jarrayParams, i);
+			if (string != NULL) myarray = env->GetStringUTFChars(string, 0);
+
+			array[i] = (myarray != NULL) ? _strdup(myarray) : NULL;
+
+			if (string != NULL)
+			{
+				env->ReleaseStringUTFChars(string, myarray);
+				env->DeleteLocalRef(string);
+			}
+		}
 	}
 
 	if (jszMyAddress != NULL)
@@ -580,7 +591,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 		env->ReleaseStringUTFChars(jChannelTrailer, pjStr);
 	}
 
-	HRESULT result = pIDataDistribution->Initialize(pDataDistributionCallbackContainer->pcb, array, size,
+	OPERATION_RESULT result = pIDataDistribution->Initialize(pDataDistributionCallbackContainer->pcb, array, size,
 		(szMyAddress != NULL) ? _strdup(szMyAddress) : NULL,
 		(channelTrailer != NULL) ? _strdup(channelTrailer) : NULL);
 
@@ -600,26 +611,40 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 
 	const char* pjStr;
 	jboolean isCopy = JNI_FALSE;
-	const char* szMyAddress;
+	const char* szMyAddress = NULL;
 
-	int size = env->GetArrayLength(jarrayParams);
+	int size = 0;
+	const char **array = NULL;
 
-	const char **array = (const char**)malloc(size * sizeof(const char *));
-
-	for (int i = 0; i < size; ++i)
+	if (jarrayParams != NULL)
 	{
-		jstring string = (jstring)env->GetObjectArrayElement(jarrayParams, i);
-		const char* myarray = env->GetStringUTFChars(string, 0);
+		size = env->GetArrayLength(jarrayParams);
+		array = (const char**)malloc(size * sizeof(const char *));
 
-		array[i] = _strdup(myarray);
+		for (int i = 0; i < size; ++i)
+		{
+			const char* myarray = NULL;
 
-		env->ReleaseStringUTFChars(string, myarray);
-		env->DeleteLocalRef(string);
+			jstring string = (jstring)env->GetObjectArrayElement(jarrayParams, i);
+
+			if (string != NULL) myarray = env->GetStringUTFChars(string, 0);
+
+			array[i] = (myarray != NULL) ? _strdup(myarray) : NULL;
+
+			if (string != NULL)
+			{
+				env->ReleaseStringUTFChars(string, myarray);
+				env->DeleteLocalRef(string);
+			}
+		}
 	}
 
-	pjStr = env->GetStringUTFChars(jszMyAddress, &isCopy);
-	szMyAddress = (pjStr != NULL) ? _strdup(pjStr) : NULL;
-	env->ReleaseStringUTFChars(jszMyAddress, pjStr);
+	if (jszMyAddress != NULL)
+	{
+		pjStr = env->GetStringUTFChars(jszMyAddress, &isCopy);
+		szMyAddress = (pjStr != NULL) ? _strdup(pjStr) : NULL;
+		env->ReleaseStringUTFChars(jszMyAddress, pjStr);
+	}
 
 	return (jlong)pIDataDistribution->RequestMastershipManager(pDataDistributionMastershipCallbackContainer->pcb, szMyAddress, array, size);
 }
@@ -749,11 +774,14 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 	const char* pjStr;
 	jboolean isCopy = JNI_FALSE;
 
-	const char* channelName;
+	const char* channelName = NULL;
 
-	pjStr = env->GetStringUTFChars(jChannelName, &isCopy);
-	channelName = (pjStr != NULL) ? _strdup(pjStr) : NULL;
-	env->ReleaseStringUTFChars(jChannelName, pjStr);
+	if (jChannelName != NULL)
+	{
+		pjStr = env->GetStringUTFChars(jChannelName, &isCopy);
+		channelName = (pjStr != NULL) ? _strdup(pjStr) : NULL;
+		env->ReleaseStringUTFChars(jChannelName, pjStr);
+	}
 
 	int size = 0;
 	const char **array = NULL;
@@ -766,13 +794,18 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 
 		for (int i = 0; i < size; ++i)
 		{
+			const char* myarray = NULL;
+
 			jstring string = (jstring)env->GetObjectArrayElement(jarrayParams, i);
-			const char* myarray = env->GetStringUTFChars(string, 0);
+			if (string != NULL)	myarray = env->GetStringUTFChars(string, 0);
 
-			array[i] = _strdup(myarray);
+			array[i] = (myarray != NULL) ? _strdup(myarray): NULL;
 
-			env->ReleaseStringUTFChars(string, myarray);
-			env->DeleteLocalRef(string);
+			if (string != NULL)
+			{
+				env->ReleaseStringUTFChars(string, myarray);
+				env->DeleteLocalRef(string);
+			}
 		}
 	}
 
@@ -788,7 +821,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistributionSubSystem, jlong jChannelHandle, jlong jtimeout)
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
-	return (jlong)pIDataDistributionSubsystem->StartChannel((HANDLE)jChannelHandle, jtimeout);
+	return (jlong)pIDataDistributionSubsystem->StartChannel((CHANNEL_HANDLE)jChannelHandle, jtimeout);
 }
 
 /*
@@ -800,7 +833,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistributionSubSystem, jlong jChannelHandle, jlong jtimeout)
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
-	return (jlong)pIDataDistributionSubsystem->StopChannel((HANDLE)jChannelHandle, jtimeout);
+	return (jlong)pIDataDistributionSubsystem->StopChannel((CHANNEL_HANDLE)jChannelHandle, jtimeout);
 }
 
 /*
@@ -816,18 +849,24 @@ JNIEXPORT void JNICALL Java_org_mases_datadistributionmanager_NativeInterface_ID
 	const char* pjStr;
 	jboolean isCopy = JNI_FALSE;
 
-	const char* paramName;
-	const char* paramValue;
+	const char* paramName = NULL;
+	const char* paramValue = NULL;
 
-	pjStr = env->GetStringUTFChars(jparamName, &isCopy);
-	paramName = (pjStr != NULL) ? _strdup(pjStr) : NULL;
-	env->ReleaseStringUTFChars(jparamName, pjStr);
+	if (jparamName != NULL)
+	{
+		pjStr = env->GetStringUTFChars(jparamName, &isCopy);
+		paramName = (pjStr != NULL) ? _strdup(pjStr) : NULL;
+		env->ReleaseStringUTFChars(jparamName, pjStr);
+	}
 
-	pjStr = env->GetStringUTFChars(jparamValue, &isCopy);
-	paramValue = (pjStr != NULL) ? _strdup(pjStr) : NULL;
-	env->ReleaseStringUTFChars(jparamValue, pjStr);
+	if (jparamValue != NULL)
+	{
+		pjStr = env->GetStringUTFChars(jparamValue, &isCopy);
+		paramValue = (pjStr != NULL) ? _strdup(pjStr) : NULL;
+		env->ReleaseStringUTFChars(jparamValue, pjStr);
+	}
 
-	pIDataDistributionSubsystem->SetParameter((HANDLE)jChannelHandle, paramName, paramValue);
+	pIDataDistributionSubsystem->SetParameter((CHANNEL_HANDLE)jChannelHandle, paramName, paramValue);
 
 	if (paramName != NULL) free((void*)paramName);
 	if (paramValue != NULL) free((void*)paramValue);
@@ -846,13 +885,15 @@ JNIEXPORT void JNICALL Java_org_mases_datadistributionmanager_NativeInterface_ID
 	const char* pjStr;
 	jboolean isCopy = JNI_FALSE;
 
-	const char* paramValue;
+	const char* paramValue = NULL;
+	if (jparamValue != NULL)
+	{
+		pjStr = env->GetStringUTFChars(jparamValue, &isCopy);
+		paramValue = (pjStr != NULL) ? _strdup(pjStr) : NULL;
+		env->ReleaseStringUTFChars(jparamValue, pjStr);
+	}
 
-	pjStr = env->GetStringUTFChars(jparamValue, &isCopy);
-	paramValue = (pjStr != NULL) ? _strdup(pjStr) : NULL;
-	env->ReleaseStringUTFChars(jparamValue, pjStr);
-
-	pIDataDistributionSubsystem->SetParameter((HANDLE)jChannelHandle, (DDM_GENERAL_PARAMETER)jparamId, paramValue);
+	pIDataDistributionSubsystem->SetParameter((CHANNEL_HANDLE)jChannelHandle, (DDM_GENERAL_PARAMETER)jparamId, paramValue);
 
 	if (paramValue != NULL) free((void*)paramValue);
 }
@@ -870,13 +911,16 @@ JNIEXPORT jstring JNICALL Java_org_mases_datadistributionmanager_NativeInterface
 	const char* pjStr;
 	jboolean isCopy = JNI_FALSE;
 
-	const char* paramName;
+	const char* paramName = NULL;
 
-	pjStr = env->GetStringUTFChars(jparamName, &isCopy);
-	paramName = (pjStr != NULL) ? _strdup(pjStr) : NULL;
-	env->ReleaseStringUTFChars(jparamName, pjStr);
+	if (jparamName != NULL)
+	{
+		pjStr = env->GetStringUTFChars(jparamName, &isCopy);
+		paramName = (pjStr != NULL) ? _strdup(pjStr) : NULL;
+		env->ReleaseStringUTFChars(jparamName, pjStr);
+	}
 
-	const char* paramValue = pIDataDistributionSubsystem->GetParameter((HANDLE)jChannelHandle, paramName);
+	const char* paramValue = pIDataDistributionSubsystem->GetParameter((CHANNEL_HANDLE)jChannelHandle, paramName);
 
 	if (paramName != NULL) free((void*)paramName);
 
@@ -892,7 +936,7 @@ JNIEXPORT jstring JNICALL Java_org_mases_datadistributionmanager_NativeInterface
 (JNIEnv * env, jclass caller, jlong jIDataDistributionSubSystem, jlong jChannelHandle, jint jparamId)
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
-	const char* paramValue = pIDataDistributionSubsystem->GetParameter((HANDLE)jChannelHandle, (DDM_GENERAL_PARAMETER)jparamId);
+	const char* paramValue = pIDataDistributionSubsystem->GetParameter((CHANNEL_HANDLE)jChannelHandle, (DDM_GENERAL_PARAMETER)jparamId);
 	return env->NewStringUTF(paramValue);
 }
 
@@ -905,7 +949,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistributionSubSystem, jlong jChannelHandle, jlong jtimeout)
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
-	return (jlong)pIDataDistributionSubsystem->Lock((HANDLE)jChannelHandle, jtimeout);
+	return (jlong)pIDataDistributionSubsystem->Lock((CHANNEL_HANDLE)jChannelHandle, jtimeout);
 }
 
 /*
@@ -917,7 +961,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistributionSubSystem, jlong jChannelHandle)
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
-	return (jlong)pIDataDistributionSubsystem->Unlock((HANDLE)jChannelHandle);
+	return (jlong)pIDataDistributionSubsystem->Unlock((CHANNEL_HANDLE)jChannelHandle);
 }
 
 /*
@@ -929,7 +973,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistributionSubSystem, jlong jChannelHandle, jlong jposition)
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
-	return (jlong)pIDataDistributionSubsystem->SeekChannel((HANDLE)jChannelHandle, jposition);
+	return (jlong)pIDataDistributionSubsystem->SeekChannel((CHANNEL_HANDLE)jChannelHandle, jposition);
 }
 
 /*
@@ -941,7 +985,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistributionSubSystem, jlong jChannelHandle)
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
-	return (jlong)pIDataDistributionSubsystem->DeleteChannel((HANDLE)jChannelHandle);
+	return (jlong)pIDataDistributionSubsystem->DeleteChannel((CHANNEL_HANDLE)jChannelHandle);
 }
 
 /*
@@ -954,19 +998,29 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
 
-	const char* pjStr;
+	int keylen = 0;
+	const char* key = NULL;
 	jboolean isCopy = JNI_FALSE;
 
-	int keylen = env->GetStringLength(jkey);
-	pjStr = env->GetStringUTFChars(jkey, &isCopy);
+	jsize bufferLen = 0;
+	jbyte *buffer = NULL;
 
-	jsize bufferLen = env->GetArrayLength(jbuffer);
-	jbyte *buffer = (jbyte *)env->GetByteArrayElements(jbuffer, NULL);
+	if (jkey != NULL)
+	{
+		int keylen = env->GetStringLength(jkey);
+		key = env->GetStringUTFChars(jkey, &isCopy);
+	}
 
-	jlong result = (jlong)pIDataDistributionSubsystem->WriteOnChannel((HANDLE)jChannelHandle, pjStr, keylen, buffer, bufferLen, jwriteAll, jtimeout);
+	if (jbuffer != NULL)
+	{
+		bufferLen = env->GetArrayLength(jbuffer);
+		buffer = (jbyte *)env->GetByteArrayElements(jbuffer, NULL);
+	}
 
-	env->ReleaseStringUTFChars(jkey, pjStr);
-	env->ReleaseByteArrayElements(jbuffer, buffer, 0);
+	jlong result = (jlong)pIDataDistributionSubsystem->WriteOnChannel((CHANNEL_HANDLE)jChannelHandle, key, keylen, buffer, bufferLen, jwriteAll, jtimeout);
+
+	if (jkey != NULL) env->ReleaseStringUTFChars(jkey, key);
+	if (jbuffer != NULL) env->ReleaseByteArrayElements(jbuffer, buffer, 0);
 	return result;
 }
 
@@ -985,7 +1039,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_mases_datadistributionmanager_NativeInterf
 
 	jbyteArray jArray = NULL;
 
-	if (pIDataDistributionSubsystem->ReadFromChannel((HANDLE)jChannelHandle, jposition, &dataLen, &receivingBuffer) == TRUE)
+	if (pIDataDistributionSubsystem->ReadFromChannel((CHANNEL_HANDLE)jChannelHandle, jposition, &dataLen, &receivingBuffer) == TRUE)
 	{
 		jArray = env->NewByteArray(dataLen);
 		env->SetByteArrayRegion(jArray, 0, dataLen, (const jbyte*)receivingBuffer);
@@ -1003,7 +1057,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistributionSubSystem, jlong jChannelHandle, jint direction)
 {
 	IDataDistributionSubsystem* pIDataDistributionSubsystem = (IDataDistributionSubsystem*)jIDataDistributionSubSystem;
-	return (jlong)pIDataDistributionSubsystem->ChangeChannelDirection((HANDLE)jChannelHandle, (DDM_CHANNEL_DIRECTION)direction);
+	return (jlong)pIDataDistributionSubsystem->ChangeChannelDirection((CHANNEL_HANDLE)jChannelHandle, (DDM_CHANNEL_DIRECTION)direction);
 }
 
 /*
@@ -1015,7 +1069,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistribution, jint dwMilliseconds)
 {
 	IDataDistribution* pIDataDistribution = (IDataDistribution*)jIDataDistribution;
-	if (pIDataDistribution->GetMastershipManager() == NULL) return (jlong)E_FAIL;
+	if (pIDataDistribution->GetMastershipManager() == NULL) return (jlong)DDM_UNMAPPED_ERROR_CONDITION;
 	return (jlong)pIDataDistribution->GetMastershipManager()->Start(dwMilliseconds);
 }
 
@@ -1028,7 +1082,7 @@ JNIEXPORT jlong JNICALL Java_org_mases_datadistributionmanager_NativeInterface_I
 (JNIEnv * env, jclass caller, jlong jIDataDistribution, jint dwMilliseconds)
 {
 	IDataDistribution* pIDataDistribution = (IDataDistribution*)jIDataDistribution;
-	if (pIDataDistribution->GetMastershipManager() == NULL) return (jlong)E_FAIL;
+	if (pIDataDistribution->GetMastershipManager() == NULL) return (jlong)DDM_UNMAPPED_ERROR_CONDITION;
 	return (jlong)pIDataDistribution->GetMastershipManager()->Stop(dwMilliseconds);
 }
 
@@ -1069,9 +1123,8 @@ JNIEXPORT jlongArray JNICALL Java_org_mases_datadistributionmanager_NativeInterf
 	IDataDistribution* pIDataDistribution = (IDataDistribution*)jIDataDistribution;
 	if (pIDataDistribution->GetMastershipManager() == NULL) return NULL;
 
-	int64_t* arrayElements = NULL;
 	size_t length;
-	pIDataDistribution->GetMastershipManager()->GetClusterIndexes(arrayElements, &length);
+	int64_t* arrayElements = pIDataDistribution->GetMastershipManager()->GetClusterIndexes(&length);
 	jlongArray jArray = NULL;
 	if (length != 0)
 	{
@@ -1113,7 +1166,7 @@ JNIEXPORT jobject JNICALL Java_org_mases_datadistributionmanager_NativeInterface
 	jclass clazz = env->FindClass("org/mases/businesscontinuity/ClusterHealthElement");
 	if (!clazz) return NULL;
 	jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IJJ)V");
-	jobject result = env->NewObject(clazz, ctor, info->Status, info->Uptime, info->LastContactTime);
+	jobject result = env->NewObject(clazz, ctor, info->ServerId, info->Status, info->Uptime, info->LastContactTime);
 	env->DeleteLocalRef(clazz);
 
 	return result;

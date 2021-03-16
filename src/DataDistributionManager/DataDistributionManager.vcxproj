@@ -98,10 +98,10 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>NOGDI;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;KAFKAMANAGER_EXPORTS;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DDM_EXPORTS;NOGDI;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;KAFKAMANAGER_EXPORTS;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <AdditionalIncludeDirectories>$(JDK_ROOT_FOLDER)include;$(JDK_ROOT_FOLDER)include\win32;..\..\jni\include;..\..\jni\include\win32;..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(JDK_ROOT_FOLDER)include;$(JDK_ROOT_FOLDER)include\win32;..\..\jni\include;..\..\jni\include\win32;..\ProductInformation</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
     </ClCompile>
@@ -116,7 +116,7 @@
       <ProgramDatabaseFile>$(OutDir)..\pdb32\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ProductInformation</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PreBuildEvent>
       <Command>
@@ -133,8 +133,8 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>NOGDI;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_USRDLL;KAFKAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(JDK_ROOT_FOLDER)include;$(JDK_ROOT_FOLDER)include\win32;..\..\jni\include;..\..\jni\include\win32;..\..\ProductInformation</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DDM_EXPORTS;NOGDI;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_USRDLL;KAFKAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(JDK_ROOT_FOLDER)include;$(JDK_ROOT_FOLDER)include\win32;..\..\jni\include;..\..\jni\include\win32;..\ProductInformation</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
     </ClCompile>
@@ -148,7 +148,7 @@
       <ProgramDatabaseFile>$(OutDir)..\pdb64\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ProductInformation</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PreBuildEvent>
       <Command>
@@ -167,8 +167,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NOGDI;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;KAFKAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(JDK_ROOT_FOLDER)include;$(JDK_ROOT_FOLDER)include\win32;..\..\jni\include;..\..\jni\include\win32;..\..\ProductInformation</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DDM_EXPORTS;NOGDI;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;KAFKAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(JDK_ROOT_FOLDER)include;$(JDK_ROOT_FOLDER)include\win32;..\..\jni\include;..\..\jni\include\win32;..\ProductInformation</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
     </ClCompile>
@@ -184,7 +184,7 @@
       <ProgramDatabaseFile>$(OutDir)..\pdb32\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ProductInformation</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PreBuildEvent>
       <Command>
@@ -203,8 +203,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NOGDI;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;_USRDLL;KAFKAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(JDK_ROOT_FOLDER)include;$(JDK_ROOT_FOLDER)include\win32;..\..\jni\include;..\..\jni\include\win32;..\..\ProductInformation</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DDM_EXPORTS;NOGDI;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;_USRDLL;KAFKAMANAGER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(JDK_ROOT_FOLDER)include;$(JDK_ROOT_FOLDER)include\win32;..\..\jni\include;..\..\jni\include\win32;..\ProductInformation</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ShowIncludes>false</ShowIncludes>
     </ClCompile>
@@ -220,7 +220,7 @@
       <ProgramDatabaseFile>$(OutDir)..\pdb64\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\..\ProductInformation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ProductInformation</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PreBuildEvent>
       <Command>
@@ -239,6 +239,8 @@
     <ClInclude Include="DataDistributionManagerCommon.h" />
     <ClInclude Include="DataDistributionManagerEnums.h" />
     <ClInclude Include="DataDistributionManagerLog.h" />
+    <ClInclude Include="DataDistributionManagerSupport.h" />
+    <ClInclude Include="DataDistributionManagerTypes.h" />
     <ClInclude Include="DataDistributionManager_c.h" />
     <ClInclude Include="DataDistributionManager_Internal.h" />
     <ClInclude Include="DataDistributionMastershipManagerBase.h" />
@@ -252,6 +254,7 @@
   <ItemGroup>
     <ClCompile Include="DataDistributionManagerCommon.cpp" />
     <ClCompile Include="DataDistributionManagerLog.cpp" />
+    <ClCompile Include="DataDistributionManagerSupportWindows.cpp" />
     <ClCompile Include="DataDistributionManager_c.cpp" />
     <ClCompile Include="DataDistributionMastershipCommon.cpp" />
     <ClCompile Include="DataDistributionMastershipManagerBase.cpp" />

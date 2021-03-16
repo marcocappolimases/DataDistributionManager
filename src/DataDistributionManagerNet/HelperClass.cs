@@ -67,15 +67,15 @@ namespace MASES.DataDistributionManager.Bindings
             return ToString((int)level);
         }
 
-        /// <summary>
-        /// Converts enum in string
-        /// </summary>
-        /// <param name="level"><see cref="DDM_UNDERLYING_ERROR_CONDITION"/></param>
-        /// <returns>Numeric string representation</returns>
-        public static string ToIntString(this DDM_UNDERLYING_ERROR_CONDITION level)
-        {
-            return ToString((int)level);
-        }
+        ///// <summary>
+        ///// Converts enum in string
+        ///// </summary>
+        ///// <param name="level"><see cref="DDM_UNDERLYING_ERROR_CONDITION"/></param>
+        ///// <returns>Numeric string representation</returns>
+        //public static string ToIntString(this DDM_UNDERLYING_ERROR_CONDITION level)
+        //{
+        //    return ToString((int)level);
+        //}
 
         /// <summary>
         /// Converts enum in string
@@ -93,16 +93,6 @@ namespace MASES.DataDistributionManager.Bindings
         /// <param name="level"><see cref="DDM_CLUSTEREVENT"/></param>
         /// <returns>Numeric string representation</returns>
         public static string ToIntString(this DDM_CLUSTEREVENT level)
-        {
-            return ToString((int)level);
-        }
-
-        /// <summary>
-        /// Converts enum in string
-        /// </summary>
-        /// <param name="level"><see cref="CHANNEL_STARTUP_TYPE"/></param>
-        /// <returns>Numeric string representation</returns>
-        public static string ToIntString(this CHANNEL_STARTUP_TYPE level)
         {
             return ToString((int)level);
         }

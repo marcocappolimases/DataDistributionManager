@@ -37,9 +37,17 @@ public class DataDistributionManagerJavaTest {
 			argsConf.setDCPSConfigFile("dds_tcp_conf.ini");
 			argsConf.setDCPSTransportDebugLevel(10);
 			conf.setOpenDDSArgs(argsConf);
-			DCPSInfoRepoConfiguration infoRepo = conf.new DCPSInfoRepoConfiguration(true,
-					"-ORBEndpoint iiop://localhost:12345");
-			conf.setDCPSInfoRepo(infoRepo);
+			if (direction == DDM_CHANNEL_DIRECTION.RECEIVER) {
+				// start info repo on receiver
+				DCPSInfoRepoConfiguration infoRepo = conf.new DCPSInfoRepoConfiguration();
+				infoRepo.setAutostart(true);
+				infoRepo.setORBEndpoint("iiop://localhost:12345");
+				infoRepo.setMonitor(true);
+				infoRepo.setResurrect(true);
+				infoRepo.setPersistenceFile("persistance.file");
+				conf.setDCPSInfoRepo(infoRepo);
+			}
+
 			DomainParticipantQosConfiguration domainPartQos = new DomainParticipantQosConfiguration();
 			domainPartQos.EntityFactoryQosPolicy = new EntityFactoryQosPolicyConfiguration();
 			domainPartQos.EntityFactoryQosPolicy.setAutoenableCreatedEntities(true);
@@ -79,7 +87,7 @@ public class DataDistributionManagerJavaTest {
 		String[] channelConfRes = channelConf.getConfiguration();
 		MySmartDataDistributionTopic mytestTopic;
 		try {
-			mytestTopic = dataDistribution.CeateSmartChannel(MySmartDataDistributionTopic.class, "test");
+			mytestTopic = dataDistribution.CreateSmartChannel(MySmartDataDistributionTopic.class, "test");
 		} catch (Throwable e) {
 			e.printStackTrace();
 			return;
@@ -90,18 +98,24 @@ public class DataDistributionManagerJavaTest {
 		mytestTopic.StartChannel(10000);
 
 		try {
-			System.out.println("Starting sending...\n");
+			if (direction == DDM_CHANNEL_DIRECTION.TRANSMITTER)
+				System.out.println("Starting sending...\n");
+			else if (direction == DDM_CHANNEL_DIRECTION.RECEIVER)
+				System.out.println("Waiting messages...\n");
 			int counter = 100;
 			String str = "test";
 			while (true) {
 				hRes = HRESULT.S_OK;
 				if (direction == DDM_CHANNEL_DIRECTION.TRANSMITTER) {
-					hRes = mytestTopic.WriteOnChannel(null, str);
-				}
-				if (hRes == HRESULT.S_OK) {
-					str = String.format("%d", counter++);
-					if ((counter % THRESHOLD) == 0)
-						System.out.println(String.format("SendData Reached %d", counter));
+					hRes = mytestTopic.WriteOnChannel(str);
+					if (hRes.getSuccess()) {
+						str = String.format("%d", counter++);
+						if ((counter % THRESHOLD) == 0) {
+							String key = String.format("SendData Reached %d", counter);
+							hRes = mytestTopic.WriteOnChannel(key, str);
+							System.out.println(key);
+						}
+					}
 				}
 				Thread.sleep(1000);
 			}

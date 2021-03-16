@@ -35,12 +35,12 @@ public:
 	void OnGOODBYE(GOODBYE* pGOODBYE);
 	void OnSTATECHANGEREQUEST(STATECHANGEREQUEST* pSTATECHANGEREQUEST);
 	void OnSTATECHANGERESPONSE(STATECHANGERESPONSE* pSTATECHANGERESPONSE);
-	void GetClusterIndexes(int64_t arraElements[], size_t* length);
+	int64_t* GetClusterIndexes(size_t* length);
 	DDM_INSTANCE_STATE GetStateOf(int64_t serverId);
 	ClusterHealth GetClusterHealth();
 private:
 	ClusterHealth clusterState;
-	CRITICAL_SECTION m_csFlags;
+	DataDistributionLockWrapper* m_csFlags;
 };
 
 #endif // !defined(DATADISTRIBUTIONMASTERSHIPMANAGERBASE_H__INCLUDED_)
